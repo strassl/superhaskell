@@ -1,23 +1,26 @@
-module Game
-    ( 
-     run
-    ) where
+module Superhaskell.Game (run) where
 
-import Control.Concurrent
-
-import qualified Generation as G
-import qualified Processing as P
-import qualified Rendering as R
-import qualified World as W
-import Util
+import           Control.Concurrent
+import           Control.Monad
+import           Superhaskell.SDL.Rendering (SDLState, executeRenderList,
+                                             initRendering)
 
 run :: IO ()
 run = do
-    R.initRendering
-    loadAssets
-    forkIO $ runGameLoop
-    runRenderLoop
+  putStrLn "SUPERHASKELL"
+  putStrLn "============"
+  sdlState <- initRendering
+  --loadAssets
+  --forkIO $ runGameLoop
+  runRenderLoop sdlState
+  putStrLn "Bye!"
 
+runRenderLoop :: SDLState -> IO ()
+runRenderLoop sdlState = do
+  wantQuit <- executeRenderList sdlState []
+  unless wantQuit $ runRenderLoop sdlState
+
+{-
 loadAssets = notImpl
 
 runGameLoop :: IO ()
@@ -30,8 +33,6 @@ stepGame gameState = do
     let gameState'' = P.tickGameState input gameState'
     storeGameState gameState'' -- seq!)
 
-runRenderLoop :: IO ()
-runRenderLoop = loop (\_ -> render) ()
 
 render :: IO ()
 render = do
@@ -52,3 +53,4 @@ storeGameState = notImpl
 -- Repeated bind
 loop :: Monad m => (a -> m a) -> a -> m a
 loop step init = (loop step) =<< (step init)
+-}

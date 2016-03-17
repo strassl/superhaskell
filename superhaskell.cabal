@@ -15,10 +15,12 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Game
-  other-modules:       Generation, Rendering, Util, World
-  build-depends:       base >= 4.7 && < 5
+  exposed-modules:     Superhaskell.Game
+  other-modules:       Superhaskell.SDL.Rendering,
+                       Superhaskell.RenderList
+  build-depends:       base
                      , sdl2
+                     , linear
   default-language:    Haskell2010
 
 executable superhaskell-exe

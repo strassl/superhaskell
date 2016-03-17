@@ -1,6 +1,6 @@
 module Main where
 
-import Game
+import Superhaskell.Game
 
 main :: IO ()
 main = run
