@@ -5,8 +5,8 @@ description:         Please see README.md
 homepage:            https://gogs.pushrax.com/haskell2016/superhaskell 
 license:             MIT
 license-file:        LICENSE
-author:              Simon Strassl
-maintainer:          simon.strassl@gmail.com
+author:              Simon Strassl, Michael Kainer
+maintainer:          simon.strassl@gmail.com, kaini@pushrax.com
 copyright:           2016 Simon Strassl, Michael Kainer
 category:            Game
 build-type:          Simple
