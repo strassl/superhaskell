@@ -6,4 +6,3 @@ data RenderCommand = Blaa | Blaaaaa -- todo
                    deriving (Show)
 
 type RenderList = [RenderCommand]
-

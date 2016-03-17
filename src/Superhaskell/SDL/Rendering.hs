@@ -30,4 +30,3 @@ executeRenderList state rl =
 isQuit :: Event -> Bool
 isQuit (Event _ (WindowClosedEvent _)) = True
 isQuit _ = False
-

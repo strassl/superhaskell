@@ -11,7 +11,7 @@ run = do
   putStrLn "============"
   sdlState <- initRendering
   --loadAssets
-  --forkIO $ runGameLoop
+  -- forkIO $ runGameLoop
   runRenderLoop sdlState
   putStrLn "Bye!"
 

@@ -16,8 +16,11 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Superhaskell.Game
-  other-modules:       Superhaskell.SDL.Rendering,
-                       Superhaskell.RenderList
+  other-modules:       Superhaskell.Data
+                     , Superhaskell.Generation
+                     , Superhaskell.Processing
+                     , Superhaskell.RenderList
+                     , Superhaskell.SDL.Rendering
   build-depends:       base
                      , sdl2
                      , linear
