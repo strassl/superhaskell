@@ -4,21 +4,23 @@ import           Control.Concurrent
 import           Control.Monad
 import           Superhaskell.SDL.Rendering (SDLState, executeRenderList,
                                              initRendering)
+import           Superhaskell.SDL.Input (InputState, getInputState, wantQuit)
 
 run :: IO ()
 run = do
   putStrLn "SUPERHASKELL"
   putStrLn "============"
   sdlState <- initRendering
-  --loadAssets
+  -- loadAssets
   -- forkIO $ runGameLoop
   runRenderLoop sdlState
   putStrLn "Bye!"
 
 runRenderLoop :: SDLState -> IO ()
 runRenderLoop sdlState = do
-  wantQuit <- executeRenderList sdlState []
-  unless wantQuit $ runRenderLoop sdlState
+  executeRenderList sdlState []
+  inputState <- getInputState
+  unless (wantQuit inputState) $ runRenderLoop sdlState
 
 {-
 loadAssets = notImpl

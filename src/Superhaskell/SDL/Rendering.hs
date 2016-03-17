@@ -16,17 +16,10 @@ initRendering = do
   renderer <- createRenderer window (-1) defaultRenderer
   return $ SDLState window renderer
 
-executeRenderList :: SDLState -> RenderList -> IO Bool
+executeRenderList :: SDLState -> RenderList -> IO ()
 executeRenderList state rl =
   let r = sdlsRenderer state
   in do
-    events <- pollEvents
-    let wantQuit = any isQuit events
     rendererDrawColor r $= V4 0 0 0 255
     clear r
     present r
-    return wantQuit
-
-isQuit :: Event -> Bool
-isQuit (Event _ (WindowClosedEvent _)) = True
-isQuit _ = False

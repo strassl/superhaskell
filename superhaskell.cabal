@@ -21,6 +21,7 @@ library
                      , Superhaskell.Processing
                      , Superhaskell.RenderList
                      , Superhaskell.SDL.Rendering
+                     , Superhaskell.SDL.Input
   build-depends:       base
                      , sdl2
                      , linear
