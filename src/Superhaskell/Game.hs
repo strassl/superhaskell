@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.Game (run) where
 
 import           Control.Concurrent
@@ -5,12 +6,14 @@ import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TVar
 import           Control.Monad
 import           Control.Monad.Loops
+import           Linear                      (V3 (..))
 import           Superhaskell.Data
-import           Superhaskell.SDL.Rendering (SDLState, executeRenderList,
-                                             initRendering)
-import           Superhaskell.SDL.Input (getInputState)
 import           Superhaskell.Generation
 import           Superhaskell.Processing
+import           Superhaskell.RenderList
+import           Superhaskell.SDL.Input      (getInputState)
+import           Superhaskell.SDL.Rendering  (SDLState, executeRenderList,
+                                              initRendering)
 
 run :: IO ()
 run = do
@@ -34,8 +37,8 @@ runRenderLoop gameStateBox inputStateBox sdlState = do
   inputState <- getInputState
   atomicWrite inputStateBox inputState
   gameState <- atomicRead gameStateBox
-  -- Generate renderlist here somehow
-  executeRenderList sdlState []
+  executeRenderList sdlState [ RenderSprite "sun1" Nothing (V3 400 400 0)
+                             , RenderSprite "powerup_bubble" Nothing (V3 200 100 0)]
   unless (not $ running gameState) $ runRenderLoop gameStateBox inputStateBox sdlState
 
 runGameLoop :: TVar GameState -> TVar InputState -> IO ()
