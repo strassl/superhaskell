@@ -1,5 +1,6 @@
 module Superhaskell.Generation (updateWorld) where
 
-import qualified Superhaskell.Data as D
+import Superhaskell.Data
 
+updateWorld :: GameState -> GameState
 updateWorld = id

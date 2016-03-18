@@ -8,7 +8,7 @@ import           Control.Monad.Loops
 import           Superhaskell.Data
 import           Superhaskell.SDL.Rendering (SDLState, executeRenderList,
                                              initRendering)
-import           Superhaskell.SDL.Input (InputState, getInputState, wantQuit)
+import           Superhaskell.SDL.Input (getInputState)
 import           Superhaskell.Generation
 import           Superhaskell.Processing
 
@@ -22,8 +22,9 @@ run = do
   inputStateBox <- atomically $ newTVar inputState;
   gameStateBox <- atomically $ newTVar gameState;
   -- Init SDL
-  sdlState <- initRendering
   -- loadAssets
+  sdlState <- initRendering
+  -- Spawn game thread
   forkIO $ runGameLoop gameStateBox inputStateBox
   runRenderLoop gameStateBox inputStateBox sdlState
   putStrLn "Bye!"

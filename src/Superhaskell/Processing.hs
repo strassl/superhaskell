@@ -1,5 +1,6 @@
 module Superhaskell.Processing (tickGameState) where
 
-import qualified Superhaskell.Data as D
+import Superhaskell.Data
 
-tickGameState _ g = g
+tickGameState :: InputState -> GameState -> GameState
+tickGameState = const id

@@ -1,16 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.SDL.Input (
-  InputState(..), getInputState
+  getInputState
 ) where
 
 import SDL
-
-data InputState = InputState { wantQuit :: Bool} deriving Show
+import Superhaskell.Data (InputState(..))
 
 getInputState :: IO InputState
 getInputState = do
   events <- pollEvents
-  return $ InputState { wantQuit = any isQuit events }
+  return $ InputState (any isQuit events)
 
 isQuit :: Event -> Bool
 isQuit (Event _ (WindowClosedEvent _)) = True
