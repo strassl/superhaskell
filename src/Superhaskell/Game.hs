@@ -52,7 +52,7 @@ stepGame gameStateBox inputStateBox gameState = do
     let gameState' = updateWorld gameState
     let gameState'' = tickGameState input gameState'
     -- Eww ugly, just a workaround for now
-    let gameState''' = gameState'' { running = (running gameState'') && (not $ wantQuit input) }
+    let gameState''' = gameState'' { running = running gameState'' && not (wantQuit input) }
     atomicWrite gameStateBox gameState''' -- seq!
     return gameState'''
 
@@ -65,7 +65,7 @@ atomicRead :: TVar a -> IO a
 atomicRead = atomically . readTVar
 
 iterateUntilM_ :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m ()
-iterateUntilM_ p f i = iterateUntilM p f i >> return ()
+iterateUntilM_ p f i = void (iterateUntilM p f i)
 
 {-
 loadAssets = notImpl

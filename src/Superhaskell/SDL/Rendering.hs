@@ -6,6 +6,7 @@ module Superhaskell.SDL.Rendering (
 import           Codec.Picture           (convertRGBA8, imageData, imageHeight,
                                           imageWidth, readImage)
 import           Control.Applicative     ((<$>))
+import           Control.Arrow           ((&&&))
 import           Control.Monad
 import qualified Data.HashMap.Strict     as M
 import           Data.Maybe              (fromJust)
@@ -35,8 +36,8 @@ initRendering = do
 
 loadTextures :: Renderer -> IO Textures
 loadTextures renderer = do
-  files <-     map (\f -> ("assets/textures/" ++ f, takeWhile (/= '.') f))
-           <$> filter ((/= '.') . head)
+  files <-     map (("assets/textures/" ++) &&& takeWhile (/= '.'))
+             . filter ((/= '.') . head)
            <$> getDirectoryContents "assets/textures/"
   foldM (loadTexture renderer) M.empty files
 
