@@ -2,4 +2,4 @@ module Superhaskell.Processing (tickGameState) where
 
 import qualified Superhaskell.Data as D
 
-tickGameState = undefined
+tickGameState _ g = g

@@ -5,7 +5,7 @@ module Superhaskell.SDL.Input (
 
 import SDL
 
-data InputState = InputState { wantQuit :: Bool}
+data InputState = InputState { wantQuit :: Bool} deriving Show
 
 getInputState :: IO InputState
 getInputState = do

@@ -25,6 +25,8 @@ library
   build-depends:       base
                      , sdl2
                      , linear
+                     , stm
+                     , monad-loops
   default-language:    Haskell2010
 
 executable superhaskell-exe
