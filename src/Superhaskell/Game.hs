@@ -16,11 +16,18 @@ import           Superhaskell.SDL.Rendering (SDLState, executeRenderList,
 import qualified System.Clock               as C
 import           Text.Printf
 
-data RenderLoopState = RenderLoopState { rlsGameState  :: TVar GameState
-                                       , rlsInputState :: TVar InputState
-                                       , rlsSdlState   :: SDLState
-                                       , rlsCount      :: Int
-                                       , rlsStartTime  :: Double }
+data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
+                                       , rlsInputStateBox :: TVar InputState
+                                       , rlsInputState    :: InputState
+                                       , rlsSdlState      :: SDLState
+                                       , rlsCount         :: Int
+                                       , rlsStartTime     :: Double }
+
+data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
+                                   , glsGameState     :: GameState
+                                   , glsInputStateBox :: TVar InputState
+                                   , glsTimeLeft      :: Double
+                                   , glsPrevTime      :: Double }
 
 run :: IO ()
 run = do
@@ -29,13 +36,12 @@ run = do
   -- Init SDL
   sdlState <- initRendering
   -- Init shared data boxes
-  inputState <- getInputState
-  inputStateBox <- atomically $ newTVar inputState
+  inputStateBox <- atomically $ newTVar defaultInputState
   gameStateBox <- atomically $ newTVar initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
-  forkIO $ runGameLoop gameStateBox inputStateBox
-  runRenderLoop $ RenderLoopState gameStateBox inputStateBox sdlState 0 startTime
+  forkIO $ runGameLoop $ GameLoopState gameStateBox initialGameState inputStateBox 0 startTime 0
+  runRenderLoop $ RenderLoopState gameStateBox inputStateBox defaultInputState sdlState 0 startTime
   putStrLn "Bye!"
 
 runRenderLoop :: RenderLoopState -> IO ()
@@ -51,42 +57,55 @@ runRenderLoop rls = do
   else
     return rls
 
-  inputState <- getInputState
-  atomicWrite (rlsInputState rls) inputState  -- TODO seq?
-  gameState <- atomicRead (rlsGameState rls)
+  inputState <- getInputState (rlsInputState rls)
+  atomicWrite (rlsInputStateBox rls) inputState  -- TODO seq?
+  gameState <- atomicRead (rlsGameStateBox rls)
   executeRenderList (rlsSdlState rls)
                     [ RenderSprite "sun1" Nothing (V3 400 400 0)
                     , RenderSprite "powerup_bubble" Nothing (V3 200 100 0)]
 
   when (running gameState) $
-    runRenderLoop rls{rlsCount = rlsCount rls + 1}
+    runRenderLoop rls{ rlsCount = rlsCount rls + 1
+                     , rlsInputState = inputState }
 
-runGameLoop :: TVar GameState -> TVar InputState -> IO ()
-runGameLoop gameStateBox inputStateBox = do
-  init <- atomicRead gameStateBox
-  iterateUntilM_ (not . running) (stepGame gameStateBox inputStateBox) init
+-- TODO output theoretical TPS and sleep time to measure performance
+runGameLoop :: GameLoopState -> IO ()
+runGameLoop gls = do
+  now <- getTimeSeconds
+  inputState <- atomicRead (glsInputStateBox gls)
 
-stepGame :: TVar GameState -> TVar InputState -> GameState -> IO GameState
-stepGame gameStateBox inputStateBox gameState = do
-  input <- atomicRead inputStateBox
-  let gameState' = updateWorld gameState
-  let gameState'' = tickGameState input gameState'
-  -- TODO Eww ugly, just a workaround for now
-  let gameState''' = gameState'' { running = running gameState'' && not (wantQuit input) }
-  atomicWrite gameStateBox gameState''' -- TODO seq!
-  return gameState'''
+  let todoTime = glsTimeLeft gls + (now - glsPrevTime gls)
+  let todoIterations = floor $ todoTime / tickTime :: Int
+  let (gameState, _) = until ((== 0) . snd)
+                             (\(gs, i) -> ( tickGame inputState gs
+                                          , i - 1 ))
+                             (glsGameState gls, todoIterations)
+  atomicWrite (glsGameStateBox gls) gameState  -- TODO seq!
 
-initialGameState :: GameState
-initialGameState = GameState { running = True }
+  let todoTimeLeft = todoTime - fromIntegral todoIterations * tickTime
+  let sleepUs = round $ (tickTime - todoTimeLeft) * 1000000
+  when (sleepUs > 1000) $
+    threadDelay sleepUs
+
+  when (running gameState) $
+    runGameLoop gls{ glsGameState = gameState
+                   , glsPrevTime = now
+                   , glsTimeLeft = todoTimeLeft }
+
+tickTime :: Floating f => f
+tickTime = 1 / 60
+
+tickGame :: InputState -> GameState -> GameState
+tickGame is = checkWantQuit is . tickGameState is . updateWorld
+
+checkWantQuit :: InputState -> GameState -> GameState
+checkWantQuit is gs = gs { running = running gs && not (wantQuit is) }
 
 atomicWrite :: TVar a -> a -> IO ()
 atomicWrite box val = atomically (writeTVar box val)
 
 atomicRead :: TVar a -> IO a
 atomicRead = atomically . readTVar
-
-iterateUntilM_ :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m ()
-iterateUntilM_ p f i = void (iterateUntilM p f i)
 
 getTimeSeconds :: Floating f => IO f
 getTimeSeconds = do
