@@ -76,10 +76,9 @@ runGameLoop gls = do
 
   let todoTime = glsTimeLeft gls + (now - glsPrevTime gls)
   let todoIterations = floor $ todoTime / tickTime :: Int
-  let (gameState, _) = until ((== 0) . snd)
-                             (\(gs, i) -> ( tickGame inputState gs
-                                          , i - 1 ))
-                             (glsGameState gls, todoIterations)
+  let gameState = foldr (const $ tickGame inputState)
+                        (glsGameState gls)
+                        [1..todoIterations]
   atomicWrite (glsGameStateBox gls) gameState  -- TODO seq!
 
   let todoTimeLeft = todoTime - fromIntegral todoIterations * tickTime
