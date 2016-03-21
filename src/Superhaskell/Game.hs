@@ -40,7 +40,7 @@ run = do
   gameStateBox <- atomically $ newTVar initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
-  forkIO $ runGameLoop $ GameLoopState gameStateBox initialGameState inputStateBox 0 startTime 0
+  forkIO $ runGameLoop $ GameLoopState gameStateBox initialGameState inputStateBox 0 startTime
   runRenderLoop $ RenderLoopState gameStateBox inputStateBox defaultInputState sdlState 0 startTime
   putStrLn "Bye!"
 
