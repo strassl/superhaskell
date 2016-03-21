@@ -5,13 +5,11 @@ module Superhaskell.SDL.Rendering (
 
 import           Codec.Picture           (convertRGBA8, imageData, imageHeight,
                                           imageWidth, readImage)
-import           Control.Applicative     ((<$>))
 import           Control.Arrow           ((&&&))
 import           Control.Monad
 import qualified Data.HashMap.Strict     as M
 import           Data.Maybe              (fromJust)
 import qualified Data.Text               as T
-import qualified Data.Vector.Mutable     as VM
 import qualified Data.Vector.Storable    as VS
 import           Foreign.C.Types
 import           Linear
@@ -22,8 +20,7 @@ import           System.Directory        (getDirectoryContents)
 
 type Textures = M.HashMap T.Text (Texture, V2 CInt)
 
-data SDLState = SDLState { sdlsWindow   :: Window
-                         , sdlsRenderer :: Renderer
+data SDLState = SDLState { sdlsRenderer :: Renderer
                          , sdlsTextures :: Textures }
 
 initRendering :: IO SDLState
@@ -32,7 +29,7 @@ initRendering = do
   window <- createWindow "Superhaskell" defaultWindow
   renderer <- createRenderer window (-1) defaultRenderer
   textures <- loadTextures renderer
-  return $ SDLState window renderer textures
+  return $ SDLState renderer textures
 
 loadTextures :: Renderer -> IO Textures
 loadTextures renderer = do

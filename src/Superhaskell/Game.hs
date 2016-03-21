@@ -19,14 +19,13 @@ run :: IO ()
 run = do
   putStrLn "SUPERHASKELL"
   putStrLn "============"
+  -- Init SDL
+  sdlState <- initRendering
   -- Init shared data boxes
   inputState <- getInputState
   let gameState = getInitialGameState
   inputStateBox <- atomically $ newTVar inputState;
   gameStateBox <- atomically $ newTVar gameState;
-  -- Init SDL
-  -- loadAssets
-  sdlState <- initRendering
   -- Spawn game thread
   forkIO $ runGameLoop gameStateBox inputStateBox
   runRenderLoop gameStateBox inputStateBox sdlState
@@ -48,13 +47,13 @@ runGameLoop gameStateBox inputStateBox = do
 
 stepGame :: TVar GameState -> TVar InputState -> GameState -> IO GameState
 stepGame gameStateBox inputStateBox gameState = do
-    input <- atomicRead inputStateBox
-    let gameState' = updateWorld gameState
-    let gameState'' = tickGameState input gameState'
-    -- Eww ugly, just a workaround for now
-    let gameState''' = gameState'' { running = running gameState'' && not (wantQuit input) }
-    atomicWrite gameStateBox gameState''' -- seq!
-    return gameState'''
+  input <- atomicRead inputStateBox
+  let gameState' = updateWorld gameState
+  let gameState'' = tickGameState input gameState'
+  -- Eww ugly, just a workaround for now
+  let gameState''' = gameState'' { running = running gameState'' && not (wantQuit input) }
+  atomicWrite gameStateBox gameState''' -- seq!
+  return gameState'''
 
 getInitialGameState = GameState { running = True }
 
@@ -66,27 +65,3 @@ atomicRead = atomically . readTVar
 
 iterateUntilM_ :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m ()
 iterateUntilM_ p f i = void (iterateUntilM p f i)
-
-{-
-loadAssets = notImpl
-
-runGameLoop :: IO ()
-runGameLoop = loop stepGame getInitialGameState
-
-
-render :: IO ()
-render = do
-    inputState <- getSDLState
-    storeInputState inputState
-    gameState <- getGameState
-    R.render gameState
-
-getSDLState = notImpl
-
-getGameState = notImpl
-storeGameState = notImpl
-
--- Repeated bind
-loop :: Monad m => (a -> m a) -> a -> m a
-loop step init = (loop step) =<< (step init)
--}
