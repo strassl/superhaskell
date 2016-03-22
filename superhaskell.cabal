@@ -22,6 +22,7 @@ library
                      , Superhaskell.Data.Entity
                      , Superhaskell.Generation
                      , Superhaskell.Processing
+                     , Superhaskell.Drawing
                      , Superhaskell.RenderList
                      , Superhaskell.SDL.Rendering
                      , Superhaskell.SDL.Input
