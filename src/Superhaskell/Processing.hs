@@ -3,4 +3,7 @@ module Superhaskell.Processing (tickGameState) where
 import Superhaskell.Data
 
 tickGameState :: InputState -> GameState -> GameState
-tickGameState = const id
+tickGameState is gs = checkWantQuit is gs
+
+checkWantQuit :: InputState -> GameState -> GameState
+checkWantQuit is gs = gs { running = running gs && not (wantQuit is) }

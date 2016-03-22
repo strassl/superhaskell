@@ -83,33 +83,36 @@ printFPS rls timeDelta = do
 runGameLoop :: GameLoopState -> IO ()
 runGameLoop gls = do
   now <- getTimeSeconds
-  inputState <- atomicRead (glsInputStateBox gls)
 
   let todoTime = glsTimeLeft gls + (now - glsPrevTime gls)
   let todoIterations = floor $ todoTime / tickTime :: Int
-  let gameState = foldr (const $ tickGame inputState)
-                        (glsGameState gls)
-                        [1..todoIterations]
-  atomicWrite (glsGameStateBox gls) gameState  -- TODO seq!
+  gls' <- gameStep gls todoIterations
 
   let todoTimeLeft = todoTime - fromIntegral todoIterations * tickTime
   let sleepUs = round $ (tickTime - todoTimeLeft) * 1000000
   when (sleepUs > 1000) $
     threadDelay sleepUs
 
-  when (running gameState) $
-    runGameLoop gls{ glsGameState = gameState
-                   , glsPrevTime = now
-                   , glsTimeLeft = todoTimeLeft }
+  when (running $ glsGameState gls') $
+    runGameLoop gls'{ glsPrevTime = now
+                    , glsTimeLeft = todoTimeLeft }
+
+gameStep :: GameLoopState -> Int -> IO GameLoopState
+gameStep gls iterations = do
+  inputState <- atomicRead (glsInputStateBox gls)
+  let gameState = iterateTimes iterations (tickGame inputState) (glsGameState gls)
+  atomicWrite (glsGameStateBox gls) gameState  -- TODO seq!
+
+  return gls{ glsGameState = gameState }
+
+iterateTimes :: Int -> (a -> a) -> a -> a
+iterateTimes iterations f init = foldr (const f) init [1..iterations]
 
 tickTime :: Floating f => f
 tickTime = 1 / 60
 
 tickGame :: InputState -> GameState -> GameState
-tickGame is = checkWantQuit is . tickGameState is . updateWorld
-
-checkWantQuit :: InputState -> GameState -> GameState
-checkWantQuit is gs = gs { running = running gs && not (wantQuit is) }
+tickGame is = tickGameState is . updateWorld
 
 atomicWrite :: TVar a -> a -> IO ()
 atomicWrite box val = atomically (writeTVar box val)
