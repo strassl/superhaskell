@@ -53,10 +53,13 @@ initRendering = do
   context <- SDL.glCreateContext window
   debugOutput $= Enabled
   debugMessageCallback $= Just print
+  blend $= Enabled
+  blendEquation $= FuncAdd
+  blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
   spriteProgram <- setupShaders
   (unitSquareVao, unitSquareVbo) <- setupUnitSquare
   textures <- loadTextures
-  clearColor $= Color4 0 0 0 1
+  clearColor $= Color4 0 0 0.25 1
   currentProgram $= Just spriteProgram
   uniform uTexture $= TextureUnit 0
   bindVertexArrayObject $= Just unitSquareVao
