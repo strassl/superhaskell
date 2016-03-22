@@ -38,6 +38,10 @@ library
                      , directory
                      , vector
                      , clock
+                     , OpenGL
+                     , OpenGLRaw
+                     , bytestring
+                     , raw-strings-qq
   default-language:    Haskell2010
 
 executable superhaskell-exe

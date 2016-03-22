@@ -12,14 +12,12 @@
 --
 -- 0/0 is the topleft corner of the viewing area.
 --
--- 1 is one player height
--- -> that are 120 texture pixels
--- -> that are 30 screen pixels in the default resolution
+-- 1 ph is one player height.
 module Superhaskell.RenderList (
   RenderCommand(..), RenderList
 ) where
 
-import           Data.Text (Text)
+import           Data.Text         (Text)
 import           Superhaskell.Math
 
 data RenderCommand = RenderSprite Text -- Name of the texture
@@ -27,4 +25,3 @@ data RenderCommand = RenderSprite Text -- Name of the texture
                    deriving (Show)
 
 type RenderList = [RenderCommand]
-

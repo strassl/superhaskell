@@ -61,7 +61,7 @@ renderStep rls = do
   inputState <- getInputState (rlsInputState rls)
   atomicWrite (rlsInputStateBox rls) inputState  -- TODO seq?
   gameState <- atomicRead (rlsGameStateBox rls)
-  executeRenderList (rlsSdlState rls) (toRenderList gameState)
+  executeRenderList (rlsSdlState rls) (V2 16 9) (toRenderList gameState)
 
   return (rls{ rlsCount = rlsCount rls + 1
             , rlsInputState = inputState }, running gameState)
