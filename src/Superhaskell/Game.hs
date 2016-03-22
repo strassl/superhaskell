@@ -4,15 +4,16 @@ module Superhaskell.Game (run) where
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Monad
+import           Linear
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
+import           Superhaskell.Drawing
 import           Superhaskell.Generation
 import           Superhaskell.Processing
-import           Superhaskell.SDL.Input        (getInputState)
-import           Superhaskell.SDL.Rendering    (SDLState, executeRenderList,
-                                                initRendering)
-import           Superhaskell.Drawing
-import qualified System.Clock               as C
+import           Superhaskell.SDL.Input       (getInputState)
+import           Superhaskell.SDL.Rendering   (SDLState, executeRenderList,
+                                               initRendering)
+import qualified System.Clock                 as C
 import           Text.Printf
 
 data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
