@@ -36,12 +36,14 @@ instance Uniform M33 where
 
 type Textures = M.HashMap T.Text TextureObject
 
-data SDLState = SDLState { sdlsWindow         :: SDL.Window
-                         , _sdlsContext       :: SDL.GLContext
-                         , sdlsTextures       :: Textures
-                         , _sdlsSpriteProgram :: Program
-                         , _sdlsUnitSquareVao :: VertexArrayObject
-                         , _sdlsUnitSquareVbo :: BufferObject }
+data SDLState = SDLState { sdlsWindow                  :: SDL.Window
+                         , _sdlsContext                :: SDL.GLContext
+                         , sdlsTextures                :: Textures
+                         , _sdlsSpriteProgram          :: Program
+                         , sdlsSpriteProgramUTransform :: UniformLocation
+                         , _sdlsSpriteProgramUTexture  :: UniformLocation
+                         , _sdlsUnitSquareVao          :: VertexArrayObject
+                         , _sdlsUnitSquareVbo          :: BufferObject }
 
 initRendering :: IO SDLState
 initRendering = do
@@ -51,22 +53,33 @@ initRendering = do
                                               , SDL.windowOpenGL = Just SDL.defaultOpenGL{
                                                   SDL.glProfile = SDL.Core SDL.Debug 3 3 }}
   context <- SDL.glCreateContext window
+
   debugOutput $= Enabled
   debugMessageCallback $= Just print
+
   blend $= Enabled
   blendEquation $= FuncAdd
   blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
+  
   spriteProgram <- setupShaders
+  spriteProgramUTransform <- get (uniformLocation spriteProgram "uTransform")
+  spriteProgramUTexture <- get (uniformLocation spriteProgram "uTexture")
+  
   (unitSquareVao, unitSquareVbo) <- setupUnitSquare
+  
   textures <- loadTextures
+  
   clearColor $= Color4 0 0 0.25 1
   currentProgram $= Just spriteProgram
-  uniform uTexture $= TextureUnit 0
+  uniform spriteProgramUTexture $= TextureUnit 0
   bindVertexArrayObject $= Just unitSquareVao
+  
   return $ SDLState window
                     context
                     textures
                     spriteProgram
+                    spriteProgramUTransform
+                    spriteProgramUTexture
                     unitSquareVao
                     unitSquareVbo
 
@@ -162,9 +175,10 @@ executeRenderList sdls viewport renderList = do
 executeRenderCommand :: SDLState -> V2 Float -> RenderCommand -> IO ()
 executeRenderCommand sdls (V2 u v) (RenderSprite tex Box{boxAnchor=V3 x y _, boxSize=V2 w h}) = do
     -- http://tinyurl.com/guuob3r
-    uniform uTransform $= M33 (V3 (V3 (2*w/u) 0        (2*x/u - 1))
-                                  (V3 0       (-2*h/v) (1 - 2*y/v))
-                                  (V3 0       0        1))
+    uniform (sdlsSpriteProgramUTransform sdls) $=
+      M33 (V3 (V3 (2*w/u) 0        (2*x/u - 1))
+              (V3 0       (-2*h/v) (1 - 2*y/v))
+              (V3 0       0        1))
     textureBinding Texture2D $= M.lookup tex (sdlsTextures sdls)
     drawArrays TriangleStrip 0 4
 
@@ -175,21 +189,14 @@ compareRenderCommand (RenderSprite _ Box{boxAnchor=V3 _ _ a})
 vectorBytes :: (Integral i, VS.Storable a) => VS.Vector a -> i
 vectorBytes v = fromIntegral $ VS.length v * sizeOf (VS.unsafeHead v)
 
-uTransform :: UniformLocation
-uTransform = UniformLocation 0
-
-uTexture :: UniformLocation
-uTexture = UniformLocation 1
-
 boxVertexShaderSource :: ByteString
 boxVertexShaderSource =
   [r|
     #version 330
-    #extension ARB_explicit_uniform_location: require
 
     layout(location = 0) in vec2 vPos;
 
-    layout(location = 0) uniform mat3 uTransform;
+    uniform mat3 uTransform;
 
     out vec2 oTexPos;
 
@@ -205,11 +212,10 @@ textureFragmentShaderSource :: ByteString
 textureFragmentShaderSource =
   [r|
     #version 330
-    #extension ARB_explicit_uniform_location: require
 
     in vec2 oTexPos;
 
-    layout(location = 1) uniform sampler2D uTexture;
+    uniform sampler2D uTexture;
 
     void main()
     {
