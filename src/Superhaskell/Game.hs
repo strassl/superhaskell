@@ -46,13 +46,15 @@ run = do
 
 runRenderLoop :: RenderLoopState -> IO ()
 runRenderLoop rls = do
+  (rls', keepGoing) <- renderStep rls
+  when keepGoing (runRenderLoop rls')
+
+renderStep :: RenderLoopState -> IO (RenderLoopState, Bool)
+renderStep rls = do
   now <- getTimeSeconds
   let timeDelta = now - rlsStartTime rls
   rls <- if timeDelta > 5 then do
-    let frames = fromIntegral (rlsCount rls)
-    let fps = frames / timeDelta :: Double
-    let mspf = timeDelta / frames * 1000 :: Double
-    printf "Frame time: %.0f ms (%.1f FPS)\n" mspf fps
+    printFPS rls timeDelta
     return rls{rlsCount = 0, rlsStartTime = now}
   else
     return rls
@@ -60,13 +62,22 @@ runRenderLoop rls = do
   inputState <- getInputState (rlsInputState rls)
   atomicWrite (rlsInputStateBox rls) inputState  -- TODO seq?
   gameState <- atomicRead (rlsGameStateBox rls)
-  executeRenderList (rlsSdlState rls)
-                    [ RenderSprite "sun1" Nothing (V3 400 400 0)
-                    , RenderSprite "powerup_bubble" Nothing (V3 200 100 0)]
+  executeRenderList (rlsSdlState rls) (toRenderList gameState)
 
-  when (running gameState) $
-    runRenderLoop rls{ rlsCount = rlsCount rls + 1
-                     , rlsInputState = inputState }
+  return (rls{ rlsCount = rlsCount rls + 1
+            , rlsInputState = inputState }, running gameState)
+
+toRenderList :: GameState -> RenderList
+toRenderList _ = [ RenderSprite "sun1" Nothing (V3 400 400 0)
+                 , RenderSprite "powerup_bubble" Nothing (V3 200 100 0)]
+
+printFPS :: RenderLoopState -> Double -> IO ()
+printFPS rls timeDelta = do
+    let frames = fromIntegral (rlsCount rls)
+    let fps = frames / timeDelta :: Double
+    let mspf = timeDelta / frames * 1000 :: Double
+    printf "Frame time: %.0f ms (%.1f FPS)\n" mspf fps
+  
 
 -- TODO output theoretical TPS and sleep time to measure performance
 runGameLoop :: GameLoopState -> IO ()
