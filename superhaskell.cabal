@@ -19,6 +19,7 @@ library
   exposed-modules:     Superhaskell.Game
   other-modules:       Superhaskell.Data.GameState
                      , Superhaskell.Data.InputState
+                     , Superhaskell.Data.Entity
                      , Superhaskell.Generation
                      , Superhaskell.Processing
                      , Superhaskell.RenderList

@@ -7,6 +7,7 @@ import           Control.Monad
 import           Linear                     (V3 (..))
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
+import           Superhaskell.Data.Entity
 import           Superhaskell.Generation
 import           Superhaskell.Processing
 import           Superhaskell.RenderList
@@ -68,8 +69,13 @@ renderStep rls = do
             , rlsInputState = inputState }, running gameState)
 
 toRenderList :: GameState -> RenderList
-toRenderList _ = [ RenderSprite "sun1" Nothing (V3 400 400 0)
-                 , RenderSprite "powerup_bubble" Nothing (V3 200 100 0)]
+toRenderList gs = map toRenderCommand (entities gs) ++
+                  [ RenderSprite "sun1" Nothing (V3 400 400 0)
+                  , RenderSprite "powerup_bubble" Nothing (V3 200 100 0)]
+  where toRenderCommand e = RenderSprite "pink" (Just $ getSize e) (getPos e)
+        getSize = size . box
+        getPos = anchor . box
+        
 
 printFPS :: RenderLoopState -> Double -> IO ()
 printFPS rls timeDelta = do
