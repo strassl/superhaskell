@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.Data.GameState (
     GameState(..), initialGameState
 ) where
@@ -15,9 +16,9 @@ initialGameState = GameState { running = True
                              , entities = mockEntities }
 
 mockEntities :: [Entity]
-mockEntities = [ platform { box = Box (V3 0 0 0) (V2 0.5 0.5) }
-               , platform { box = Box (V3 1 0.5 0) (V2 0.5 0.8) }
+mockEntities = [ platform { box = Box (V3 0 0 0) (V2 3 0.75) }
+               , platform { box = Box (V3 4 0.5 0) (V2 6 0.75) }
                ]
 
 platform :: Entity
-platform = Entity { box = Box (V3 0 0 0) (V2 0 0), style = BoxStyle, behavior = NoopBehavior }
+platform = Entity { box = Box (V3 0 0 0) (V2 0 0), style = BoxStyle "ground_stone", behavior = NoopBehavior }
