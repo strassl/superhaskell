@@ -1,6 +1,7 @@
 module Superhaskell.Processing (tickGameState) where
 
-import Superhaskell.Data
+import Superhaskell.Data.GameState
+import Superhaskell.Data.InputState
 
 tickGameState :: InputState -> GameState -> GameState
 tickGameState is gs = checkWantQuit is gs

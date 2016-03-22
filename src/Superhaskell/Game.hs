@@ -5,7 +5,8 @@ import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Monad
 import           Linear                     (V3 (..))
-import           Superhaskell.Data
+import           Superhaskell.Data.GameState
+import           Superhaskell.Data.InputState
 import           Superhaskell.Generation
 import           Superhaskell.Processing
 import           Superhaskell.RenderList

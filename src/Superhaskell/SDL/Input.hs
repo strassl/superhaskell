@@ -4,7 +4,7 @@ module Superhaskell.SDL.Input (
 ) where
 
 import SDL
-import Superhaskell.Data (InputState(..))
+import Superhaskell.Data.InputState
 
 getInputState :: InputState -> IO InputState
 getInputState is = do
