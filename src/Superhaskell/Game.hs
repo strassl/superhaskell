@@ -4,17 +4,17 @@ module Superhaskell.Game (run) where
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Monad
-import           Linear                     (V3 (..))
+import           Linear                       (V2 (..), V3 (..))
+import           Superhaskell.Data.Entity
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
-import           Superhaskell.Data.Entity
 import           Superhaskell.Generation
 import           Superhaskell.Processing
 import           Superhaskell.RenderList
-import           Superhaskell.SDL.Input     (getInputState)
-import           Superhaskell.SDL.Rendering (SDLState, executeRenderList,
-                                             initRendering)
-import qualified System.Clock               as C
+import           Superhaskell.SDL.Input       (getInputState)
+import           Superhaskell.SDL.Rendering   (SDLState, executeRenderList,
+                                               initRendering)
+import qualified System.Clock                 as C
 import           Text.Printf
 
 data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
@@ -70,12 +70,10 @@ renderStep rls = do
 
 toRenderList :: GameState -> RenderList
 toRenderList gs = map toRenderCommand (entities gs) ++
-                  [ RenderSprite "sun1" Nothing (V3 400 400 0)
-                  , RenderSprite "powerup_bubble" Nothing (V3 200 100 0)]
-  where toRenderCommand e = RenderSprite "pink" (Just $ getSize e) (getPos e)
-        getSize = size . box
-        getPos = anchor . box
-        
+                  [ RenderSprite "sun1" (Box (V3 4 4 0) (V2 1 1))
+                  , RenderSprite "powerup_bubble" (Box (V3 2 1 0) (V2 1 1))]
+  where toRenderCommand e = RenderSprite "pink" (box e)
+
 
 printFPS :: RenderLoopState -> Double -> IO ()
 printFPS rls timeDelta = do
@@ -83,7 +81,7 @@ printFPS rls timeDelta = do
     let fps = frames / timeDelta :: Double
     let mspf = timeDelta / frames * 1000 :: Double
     printf "Frame time: %.0f ms (%.1f FPS)\n" mspf fps
-  
+
 
 -- TODO output theoretical TPS and sleep time to measure performance
 runGameLoop :: GameLoopState -> IO ()
