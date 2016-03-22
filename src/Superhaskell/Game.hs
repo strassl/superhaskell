@@ -4,7 +4,6 @@ module Superhaskell.Game (run) where
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Monad
-import           Control.Monad.Loops
 import           Linear                     (V3 (..))
 import           Superhaskell.Data
 import           Superhaskell.Generation
@@ -40,7 +39,7 @@ run = do
   gameStateBox <- atomically $ newTVar initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
-  forkIO $ runGameLoop $ GameLoopState gameStateBox initialGameState inputStateBox 0 startTime
+  _ <- forkIO $ runGameLoop $ GameLoopState gameStateBox initialGameState inputStateBox 0 startTime
   runRenderLoop $ RenderLoopState gameStateBox inputStateBox defaultInputState sdlState 0 startTime
   putStrLn "Bye!"
 
