@@ -1,5 +1,5 @@
 module Superhaskell.Data.Entity (
-    Style(..), Behavior(..), Box(..), Entity(..)
+    Style(..), Behavior(..), Entity(..)
 ) where
 
 import           Superhaskell.Math

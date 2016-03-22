@@ -5,6 +5,7 @@ module Superhaskell.Data.GameState (
 import           Linear.V2                (V2 (..))
 import           Linear.V3                (V3 (..))
 import           Superhaskell.Data.Entity
+import           Superhaskell.Math
 
 data GameState = GameState { entities :: [Entity]
                            , running  :: Bool } deriving Show
