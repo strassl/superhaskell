@@ -155,8 +155,8 @@ loadTexture textures (path, name) = do
       textureBinding Texture2D $= Just texture
       VS.unsafeWith (imageData rgbaImage) $ \ptr ->
         texImage2D Texture2D NoProxy 0 RGBA' size 0 (PixelData RGBA UnsignedByte ptr)
-      textureWrapMode Texture2D S $= (Mirrored, Clamp)
-      textureWrapMode Texture2D T $= (Mirrored, Clamp)
+      textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
+      textureWrapMode Texture2D T $= (Repeated, ClampToEdge)
       textureFilter Texture2D $= ((Linear', Just Linear'), Linear')
       generateMipmap' Texture2D
 
