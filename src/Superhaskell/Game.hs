@@ -24,9 +24,7 @@ data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
 
 data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
                                    , glsGameState     :: GameState
-                                   , glsInputStateBox :: TVar InputState
-                                   , glsTimeLeft      :: Double
-                                   , glsPrevTime      :: Double }
+                                   , glsInputStateBox :: TVar InputState }
 
 run :: IO ()
 run = do
@@ -39,7 +37,9 @@ run = do
   gameStateBox <- atomically $ newTVar initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
-  _ <- forkIO $ runGameLoop $ GameLoopState gameStateBox initialGameState inputStateBox 0 startTime
+  _ <- forkIO $ runGameLoop startTime 0 startTime 0 0 (GameLoopState gameStateBox
+                                                                     initialGameState
+                                                                     inputStateBox)
   runRenderLoop startTime 0 (RenderLoopState gameStateBox
                                              inputStateBox
                                              defaultInputState
@@ -71,25 +71,54 @@ printFPS :: Int -> Double -> IO ()
 printFPS frames timeDelta = do
   let fps = fromIntegral frames / timeDelta
   let mspf = timeDelta / fromIntegral frames * 1000
-  printf "Frame time: %.0f ms (%.1f FPS)\n" mspf fps
+  printf "Frame time: %.0f ms    %.1f FPS\n" mspf fps
 
--- TODO output theoretical TPS and sleep time to measure performance
-runGameLoop :: GameLoopState -> IO ()
-runGameLoop gls = do
+runGameLoop :: Double -> Double -> Double -> Int -> Int -> GameLoopState -> IO ()
+runGameLoop prevTime timeLeft measureStartTime totalSleepUs ticks gls = do
   now <- getTimeSeconds
 
-  let todoTime = glsTimeLeft gls + (now - glsPrevTime gls)
+  let todoTime = timeLeft + (now - prevTime)
   let todoIterations = floor $ todoTime / tickTime
   gls' <- gameStep gls todoIterations
 
   let todoTimeLeft = todoTime - fromIntegral todoIterations * tickTime
   let sleepUs = round $ (tickTime - todoTimeLeft) * 1000000
-  when (sleepUs > 1000) $
-    threadDelay sleepUs
+  (measureStartTime', totalSleepUs', ticks') <- do
+    let delta = now - measureStartTime
+    if delta > 5
+      then
+        if sleepUs > 1000
+          then do
+            printTPS delta totalSleepUs ticks
+            threadDelay sleepUs
+            return (now, sleepUs, todoIterations)
+          else do
+            printTPS delta totalSleepUs ticks
+            return (now, 0, todoIterations)
+      else
+        if sleepUs > 1000
+          then do
+            threadDelay sleepUs
+            return (measureStartTime, totalSleepUs + sleepUs, ticks + todoIterations)
+          else
+            return (measureStartTime, totalSleepUs, ticks + todoIterations)
 
-  when (running $ glsGameState gls') $
-    runGameLoop gls'{ glsPrevTime = now
-                    , glsTimeLeft = todoTimeLeft }
+  when (running $ glsGameState gls') $ runGameLoop now
+                                                   todoTimeLeft
+                                                   measureStartTime'
+                                                   totalSleepUs'
+                                                   ticks'
+                                                   gls'
+
+printTPS :: Double -> Int -> Int -> IO ()
+printTPS deltaTime totalSleepUs ticks =
+  let sleepTime = fromIntegral totalSleepUs / 1000000
+      tickTime = (deltaTime - sleepTime) / fromIntegral ticks
+      ttps = deltaTime / tickTime
+  in printf "Sleep time: %.0f ms    Tick time: %.0f ms    %.1f theoretical TPS\n"
+            (sleepTime * 1000)
+            tickTime
+            ttps
 
 gameStep :: GameLoopState -> Int -> IO GameLoopState
 gameStep gls iterations = do
