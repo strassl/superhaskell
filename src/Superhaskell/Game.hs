@@ -19,9 +19,7 @@ import           Text.Printf
 data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
                                        , rlsInputStateBox :: TVar InputState
                                        , rlsInputState    :: InputState
-                                       , rlsSdlState      :: SDLState
-                                       , rlsCount         :: Int
-                                       , rlsStartTime     :: Double }
+                                       , rlsSdlState      :: SDLState }
 
 data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
                                    , glsGameState     :: GameState
@@ -41,39 +39,38 @@ run = do
   -- Spawn game thread
   startTime <- getTimeSeconds
   _ <- forkIO $ runGameLoop $ GameLoopState gameStateBox initialGameState inputStateBox 0 startTime
-  runRenderLoop $ RenderLoopState gameStateBox inputStateBox defaultInputState sdlState 0 startTime
+  runRenderLoop startTime 0 (RenderLoopState gameStateBox
+                                             inputStateBox
+                                             defaultInputState
+                                             sdlState)
   putStrLn "Bye!"
 
-runRenderLoop :: RenderLoopState -> IO ()
-runRenderLoop rls = do
+runRenderLoop :: Double -> Int -> RenderLoopState -> IO ()
+runRenderLoop fpsStartTime fpsCount rls = do
+  now <- getTimeSeconds
+  let timeDelta = now - fpsStartTime
+  (fpsStartTime', fpsCount') <- if timeDelta > 5 then do
+    printFPS fpsCount timeDelta
+    return (now, 0)
+  else
+    return (fpsStartTime, fpsCount + 1)
+
   (rls', keepGoing) <- renderStep rls
-  when keepGoing (runRenderLoop rls')
+  when keepGoing (runRenderLoop fpsStartTime' fpsCount' rls')
 
 renderStep :: RenderLoopState -> IO (RenderLoopState, Bool)
 renderStep rls = do
-  now <- getTimeSeconds
-  let timeDelta = now - rlsStartTime rls
-  rls <- if timeDelta > 5 then do
-    printFPS rls timeDelta
-    return rls{rlsCount = 0, rlsStartTime = now}
-  else
-    return rls
-
   inputState <- getInputState (rlsInputState rls)
   atomicWrite (rlsInputStateBox rls) inputState  -- TODO seq?
   gameState <- atomicRead (rlsGameStateBox rls)
   executeRenderList (rlsSdlState rls) (V2 16 9) (toRenderList gameState)
+  return (rls{rlsInputState = inputState}, running gameState)
 
-  return (rls{ rlsCount = rlsCount rls + 1
-            , rlsInputState = inputState }, running gameState)
-
-printFPS :: RenderLoopState -> Double -> IO ()
-printFPS rls timeDelta = do
-    let frames = fromIntegral (rlsCount rls)
-    let fps = frames / timeDelta :: Double
-    let mspf = timeDelta / frames * 1000 :: Double
-    printf "Frame time: %.0f ms (%.1f FPS)\n" mspf fps
-
+printFPS :: Int -> Double -> IO ()
+printFPS frames timeDelta = do
+  let fps = fromIntegral frames / timeDelta
+  let mspf = timeDelta / fromIntegral frames * 1000
+  printf "Frame time: %.0f ms (%.1f FPS)\n" mspf fps
 
 -- TODO output theoretical TPS and sleep time to measure performance
 runGameLoop :: GameLoopState -> IO ()
