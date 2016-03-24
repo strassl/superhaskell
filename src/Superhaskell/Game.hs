@@ -3,6 +3,7 @@ module Superhaskell.Game (run) where
 
 import           Control.Concurrent
 import           Control.Concurrent.STM
+import           Control.DeepSeq
 import           Control.Monad
 import           Linear
 import           Superhaskell.Data.GameState
@@ -61,7 +62,7 @@ runRenderLoop fpsStartTime fpsCount rls = do
 renderStep :: RenderLoopState -> IO (RenderLoopState, Bool)
 renderStep rls = do
   inputState <- getInputState (rlsInputState rls)
-  atomicWrite (rlsInputStateBox rls) inputState  -- TODO seq?
+  inputState `deepseq` atomicWrite (rlsInputStateBox rls) inputState
   gameState <- atomicRead (rlsGameStateBox rls)
   executeRenderList (rlsSdlState rls) (V2 16 9) (toRenderList gameState)
   return (rls{rlsInputState = inputState}, running gameState)

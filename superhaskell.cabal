@@ -42,6 +42,7 @@ library
                      , OpenGLRaw
                      , bytestring
                      , raw-strings-qq
+                     , deepseq
   default-language:    Haskell2010
 
 executable superhaskell-exe
