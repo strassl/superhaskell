@@ -79,7 +79,7 @@ runGameLoop gls = do
   now <- getTimeSeconds
 
   let todoTime = glsTimeLeft gls + (now - glsPrevTime gls)
-  let todoIterations = floor $ todoTime / tickTime :: Int
+  let todoIterations = floor $ todoTime / tickTime
   gls' <- gameStep gls todoIterations
 
   let todoTimeLeft = todoTime - fromIntegral todoIterations * tickTime
@@ -95,8 +95,7 @@ gameStep :: GameLoopState -> Int -> IO GameLoopState
 gameStep gls iterations = do
   inputState <- atomicRead (glsInputStateBox gls)
   let gameState = iterateTimes iterations (tickGame inputState) (glsGameState gls)
-  atomicWrite (glsGameStateBox gls) gameState  -- TODO seq!
-
+  gameState `deepseq` atomicWrite (glsGameStateBox gls) gameState
   return gls{ glsGameState = gameState }
 
 iterateTimes :: Int -> (a -> a) -> a -> a
