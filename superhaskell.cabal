@@ -35,6 +35,7 @@ library
                      , monad-loops
                      , JuicyPixels
                      , text
+                     , containers
                      , unordered-containers
                      , directory
                      , vector
