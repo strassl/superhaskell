@@ -46,7 +46,7 @@ entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
 entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
 
 player :: Entity
-player = Entity { eBox = Box (V3 4 5 0) (V2 0.5970149253731343 1)
+player = Entity { eBox = Box (V3 4 2 0) (V2 0.5970149253731343 1)
                 , eStyle = BoxStyle "bunny1_stand"  -- TODO PlayerStyle
                 , eBehavior = PlayerBehavior { bvFalling = Just 0 }
                 , eCollisionGroup = PlayerCGroup }

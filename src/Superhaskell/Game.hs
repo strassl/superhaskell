@@ -41,7 +41,7 @@ run = do
   gameStateBox <- atomically $ newTVar initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
-  let randGen = mkStdGen 42
+  let randGen = mkStdGen 43
   _ <- forkIO $ runGameLoop startTime 0 startTime 0 0 (GameLoopState gameStateBox
                                                                      initialGameState
                                                                      inputStateBox
