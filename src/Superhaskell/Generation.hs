@@ -20,12 +20,15 @@ type VPBound = Float
 
 updateWorld :: RandomGen g => GameState -> Rand g GameState
 updateWorld gs@GameState{entities = es} = do
-  generated <- generate
+  generated <- generate (gsGenState gs)
+  let nBound = maximum $ map ((^._x) . rightBottom . eBox) generated
   let pruned = prune 0 es
-  return gs{entities = pruned ++ generated}
+  let nGenState = (gsGenState gs) { genBound = nBound }
+  return gs{ entities = pruned ++ generated
+           , gsGenState = nGenState }
 
-generate :: RandomGen g => Rand g [Entity]
-generate = return mockScenery
+generate :: RandomGen g => GenState -> Rand g [Entity]
+generate _ = return mockScenery
 
 prune :: VPBound -> [Entity] -> [Entity]
 prune vpleft = filter (isLeftOfViewport vpleft)

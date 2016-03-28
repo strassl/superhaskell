@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
 module Superhaskell.Data.GameState (
-    GameState(..), initialGameState
+    GameState(..),
+    GenState(..),
+    initialGameState
 ) where
 
 import           Control.DeepSeq
@@ -17,6 +19,7 @@ data GameState = GameState { entities :: [Entity]
 data GenState = GenState { genBound :: Float
                          }
                deriving (Show, Generic, NFData)
+
 
 initialGameState :: GameState
 initialGameState = GameState { running = True
