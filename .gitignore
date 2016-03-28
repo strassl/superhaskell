@@ -17,3 +17,5 @@ cabal.sandbox.config
 *.hp
 .stack-work/
 
+# IntelliJ
+.idea
