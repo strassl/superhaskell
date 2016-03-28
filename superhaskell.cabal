@@ -45,6 +45,7 @@ library
                      , raw-strings-qq
                      , deepseq
                      , MonadRandom
+                     , random
   default-language:    Haskell2010
 
 executable superhaskell-exe

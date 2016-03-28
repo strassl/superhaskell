@@ -17,6 +17,7 @@ import           Superhaskell.SDL.Input       (getInputState)
 import           Superhaskell.SDL.Rendering   (SDLState, executeRenderList,
                                                initRendering)
 import qualified System.Clock                 as C
+import           System.Random
 import           Text.Printf
 
 data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
@@ -26,7 +27,9 @@ data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
 
 data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
                                    , glsGameState     :: GameState
-                                   , glsInputStateBox :: TVar InputState }
+                                   , glsInputStateBox :: TVar InputState
+                                   , glsRandomGen     :: StdGen
+                                   }
 
 run :: IO ()
 run = do
@@ -39,9 +42,11 @@ run = do
   gameStateBox <- atomically $ newTVar initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
+  let randGen = mkStdGen 42
   _ <- forkIO $ runGameLoop startTime 0 startTime 0 0 (GameLoopState gameStateBox
                                                                      initialGameState
-                                                                     inputStateBox)
+                                                                     inputStateBox
+                                                                     randGen)
   runRenderLoop startTime 0 (RenderLoopState gameStateBox
                                              inputStateBox
                                              defaultInputState
@@ -125,10 +130,10 @@ printTPS deltaTime totalSleepUs ticks =
 gameStep :: GameLoopState -> Int -> IO GameLoopState
 gameStep gls iterations = do
   inputState <- atomicRead (glsInputStateBox gls)
-  -- TODO eval with fixed seed
-  gameState <- evalRandIO $ iterateTimesM iterations (tickGame inputState) (glsGameState gls)
+  let (gameState, g) = runRand (iterateTimesM iterations (tickGame inputState) (glsGameState gls)) (glsRandomGen gls)
   gameState `deepseq` atomicWrite (glsGameStateBox gls) gameState
-  return gls{ glsGameState = gameState }
+  return gls{ glsGameState = gameState
+            , glsRandomGen = g}
 
 iterateTimesM :: Monad m => Int -> (a -> m a) -> a -> m a
 iterateTimesM iterations f init = foldrM (const f) init [1..iterations]

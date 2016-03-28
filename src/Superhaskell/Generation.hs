@@ -38,7 +38,7 @@ generate _vp@(V2 w h) _gs@GenState{genBound = bound}
   | bound >= w = return []
   | otherwise = do
     let parts = partition bound w
-    sequence $ map (generatePlatform (0, h)) parts
+    mapM (generatePlatform (0, h)) parts
 
 partition :: Float -> Float -> [(Float, Float)]
 partition l r = zip parts (tail' parts)
@@ -74,4 +74,4 @@ partitionWidth = 4
 
 tail' :: [a] -> [a]
 tail' [] = []
-tail' (x:xs) = xs
+tail' (_:xs) = xs
