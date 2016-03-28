@@ -29,6 +29,7 @@ library
                      , Superhaskell.Math
   build-depends:       base
                      , sdl2
+                     , lens
                      , linear
                      , stm
                      , monad-loops
@@ -43,6 +44,7 @@ library
                      , bytestring
                      , raw-strings-qq
                      , deepseq
+                     , MonadRandom
   default-language:    Haskell2010
 
 executable superhaskell-exe
