@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.Game (run) where
 
+import           Control.Monad.Random
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.DeepSeq
 import           Control.Monad
+import           Data.Foldable
 import           Linear
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
@@ -123,18 +125,19 @@ printTPS deltaTime totalSleepUs ticks =
 gameStep :: GameLoopState -> Int -> IO GameLoopState
 gameStep gls iterations = do
   inputState <- atomicRead (glsInputStateBox gls)
-  let gameState = iterateTimes iterations (tickGame inputState) (glsGameState gls)
+  -- TODO eval with fixed seed
+  gameState <- evalRandIO $ iterateTimesM iterations (tickGame inputState) (glsGameState gls)
   gameState `deepseq` atomicWrite (glsGameStateBox gls) gameState
   return gls{ glsGameState = gameState }
 
-iterateTimes :: Int -> (a -> a) -> a -> a
-iterateTimes iterations f init = foldr (const f) init [1..iterations]
+iterateTimesM :: Monad m => Int -> (a -> m a) -> a -> m a
+iterateTimesM iterations f init = foldrM (const f) init [1..iterations]
 
 tickTime :: Floating f => f
 tickTime = 1 / 60
 
-tickGame :: InputState -> GameState -> GameState
-tickGame is = tickGameState is . updateWorld
+tickGame :: RandomGen g => InputState -> GameState -> Rand g GameState
+tickGame is gs = fmap (tickGameState is) (updateWorld gs)
 
 atomicWrite :: TVar a -> a -> IO ()
 atomicWrite box val = atomically (writeTVar box val)
