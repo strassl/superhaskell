@@ -41,7 +41,7 @@ moveBox (V2 x y) box@Box{boxAnchor=anchor} =
 
 boxContains :: V2 Float -> Box -> Bool
 boxContains (V2 px py) Box{boxAnchor=(V3 bx by _), boxSize=(V2 sx sy)} =
-     bx < px && px < px + sx
+     bx < px && px < bx + sx
   && by < py && py < by + sy
 
 -- TODO optimize this!?!?!

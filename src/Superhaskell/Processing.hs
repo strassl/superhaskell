@@ -7,7 +7,6 @@ import           Superhaskell.Data.Entity
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Math
-import Debug.Trace
 
 -- Base speed in units/tick.
 playerBaseSpeed :: Float
@@ -44,7 +43,7 @@ applyBehavior is gs box bv@PlayerBehavior{bvFalling=falling} =
       box' = moveBox (gravityDeltaPos ^+^ moveDeltaPos) box
       offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 eps) SceneryCGroup gs)
               && null (entitiesAtInGroup (rightBottom box + V2 0 eps) SceneryCGroup gs)
-  in (box', bv{bvFalling=falling' <|> if traceShowId offEdge then Just 1 else Nothing})
+  in (box', bv{bvFalling=falling' <|> if offEdge then Just 1 else Nothing})
 applyBehavior _ _ box b = (box, b)
 
 applyGravity :: Maybe Float -> (Maybe Float, V2 Float)
