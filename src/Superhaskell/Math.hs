@@ -23,7 +23,7 @@ leftBottom _b@Box{boxAnchor = anchor, boxSize = size} = over _y addHeight (witho
   where addHeight = (+ (size ^._y))
 
 rightBottom :: Box -> V2 Float
-rightBottom _b@Box{boxAnchor = anchor, boxSize = size} = (withoutZ anchor) + size
+rightBottom _b@Box{boxAnchor = anchor, boxSize = size} = withoutZ anchor + size
 
 rightTop :: Box -> V2 Float
 rightTop _b@Box{boxAnchor = anchor, boxSize = size} = over _x addWidth (withoutZ anchor)
