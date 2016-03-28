@@ -10,7 +10,7 @@ toRenderList :: GameState -> RenderList
 toRenderList gs = map toRenderCommand (entities gs)
 
 toRenderCommand :: Entity -> RenderCommand
-toRenderCommand e = RenderSprite (getTexture (style e)) (box e)
+toRenderCommand e = RenderSprite (getTexture (eStyle e)) (eBox e)
 
 getTexture :: Style -> Text
 getTexture (BoxStyle t) = t
