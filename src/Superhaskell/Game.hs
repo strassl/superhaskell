@@ -65,7 +65,7 @@ renderStep rls = do
   inputState `deepseq` atomicWrite (rlsInputStateBox rls) inputState
   gameState <- atomicRead (rlsGameStateBox rls)
   executeRenderList (rlsSdlState rls) (V2 16 9) (toRenderList gameState)
-  return (rls{rlsInputState = inputState}, running gameState)
+  return (rls{rlsInputState = inputState}, gsRunning gameState)
 
 printFPS :: Int -> Double -> IO ()
 printFPS frames timeDelta = do
@@ -103,12 +103,12 @@ runGameLoop prevTime timeLeft measureStartTime totalSleepUs ticks gls = do
           else
             return (measureStartTime, totalSleepUs, ticks + todoIterations)
 
-  when (running $ glsGameState gls') $ runGameLoop now
-                                                   todoTimeLeft
-                                                   measureStartTime'
-                                                   totalSleepUs'
-                                                   ticks'
-                                                   gls'
+  when (gsRunning $ glsGameState gls') $ runGameLoop now
+                                                     todoTimeLeft
+                                                     measureStartTime'
+                                                     totalSleepUs'
+                                                     ticks'
+                                                     gls'
 
 printTPS :: Double -> Int -> Int -> IO ()
 printTPS deltaTime totalSleepUs ticks =

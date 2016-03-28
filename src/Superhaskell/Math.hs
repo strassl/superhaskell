@@ -4,6 +4,7 @@ module Superhaskell.Math (
     Box(..)
   , leftTop
   , rightBottom
+  , moveBox, boxContains, boxOverlaps
 ) where
 
 import           Control.Lens
@@ -31,3 +32,19 @@ rightTop _b@Box{boxAnchor = anchor, boxSize = size} = over _x addWidth (withoutZ
 
 withoutZ :: V3 t -> V2 t
 withoutZ = (^._xy)
+
+moveBox :: V2 Float -> Box -> Box
+moveBox (V2 x y) box@Box{boxAnchor=anchor} =
+  box{boxAnchor = anchor ^+^ V3 x y 0}
+
+boxContains :: V2 Float -> Box -> Bool
+boxContains (V2 px py) Box{boxAnchor=(V3 bx by _), boxSize=(V2 sx sy)} =
+     bx <= px && px <= px + sx
+  && by <= py && py <= by + sy
+
+-- TODO optimize this!?!?!
+boxOverlaps :: Box -> Box -> Bool
+boxOverlaps a b = anyCorner a b || anyCorner b a
+  where
+    anyCorner a b = 
+      any (flip boxContains a . ($ b)) [leftTop, leftBottom, rightBottom, rightTop]

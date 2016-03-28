@@ -14,13 +14,13 @@ data Style = BoxStyle Text
            deriving (Show, Generic, NFData)
 
 data Behavior = NoopBehavior
-              | PlayerBehavior
+              | PlayerBehavior { bvFalling :: Maybe Float }
               deriving (Show, Generic, NFData)
 
 data CollisionGroup = PlayerCGroup
                     | SceneryCGroup
                     | NilCGroup
-                    deriving (Show, Generic, NFData)
+                    deriving (Show, Generic, NFData, Eq, Enum, Bounded, Ord)
 
 data Entity = Entity { eBox            :: Box
                      , eStyle          :: Style
