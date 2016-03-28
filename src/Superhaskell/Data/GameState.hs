@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.Data.GameState (
-    GameState(..), initialGameState
+    GameState(..), initialGameState, entitiesAt, entitiesAtInGroup
 ) where
 
 import           Control.DeepSeq
@@ -19,6 +19,12 @@ data GameState = GameState { gsEntities :: [Entity]
 initialGameState :: GameState
 initialGameState = GameState { gsRunning = True
                              , gsEntities = mockEntities }
+
+entitiesAt :: V2 Float -> GameState -> [Entity]
+entitiesAt p gs = filter (boxContains p . eBox) (gsEntities gs)
+
+entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
+entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
 
 mockEntities :: [Entity]
 mockEntities = [player, platform{eBox=Box (V3 2 8 (-1)) (V2 5 1)}]

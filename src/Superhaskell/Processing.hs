@@ -1,11 +1,13 @@
 module Superhaskell.Processing (tickGameState) where
 
-import qualified Data.Map.Strict as Map
+import           Control.Applicative
+import qualified Data.Map.Strict              as Map
 import           Linear
 import           Superhaskell.Data.Entity
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Math
+import Debug.Trace
 
 -- Base speed in units/tick.
 playerBaseSpeed :: Float
@@ -14,6 +16,10 @@ playerBaseSpeed = 3 / 60
 -- Gravity in units/tick².
 gravity :: Float
 gravity = 0.5 / 60
+
+-- A small number.
+eps :: Float
+eps = 1 / 1024
 
 -- Advances the game state by one tick.
 tickGameState :: InputState -> GameState -> GameState
@@ -31,12 +37,14 @@ tickEntity is gs e@Entity{eBox=box, eBehavior=behavior} =
   in e{eBox=box', eBehavior=behavior'}
 
 applyBehavior :: InputState -> GameState -> Box -> Behavior -> (Box, Behavior)
-applyBehavior is _ box bv@PlayerBehavior{bvFalling=falling} =
+applyBehavior is gs box bv@PlayerBehavior{bvFalling=falling} =
   let (V2 inputX _) = isDirection is
       (falling', gravityDeltaPos) = applyGravity falling
       moveDeltaPos = V2 (inputX * playerBaseSpeed) 0
       box' = moveBox (gravityDeltaPos ^+^ moveDeltaPos) box
-  in (box', bv{bvFalling=falling'})
+      offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 eps) SceneryCGroup gs)
+              && null (entitiesAtInGroup (rightBottom box + V2 0 eps) SceneryCGroup gs)
+  in (box', bv{bvFalling=falling' <|> if traceShowId offEdge then Just 1 else Nothing})
 applyBehavior _ _ box b = (box, b)
 
 applyGravity :: Maybe Float -> (Maybe Float, V2 Float)
@@ -69,7 +77,7 @@ applyCollisions e os =
 -- | Applys the collision and is supposed to return an updated version of the
 -- *second* entity (the subject). The second entity is the object.
 applyCollision :: Box -> Behavior -> Box -> Behavior -> (Box, Behavior)
-applyCollision _ _ box bv@PlayerBehavior{} =
-  (box, bv{bvFalling=Nothing})
+applyCollision obox _ box bv@PlayerBehavior{} =
+  (pushOut obox box, bv{bvFalling=Nothing})
 applyCollision _ _ box e =
   (box, e)
