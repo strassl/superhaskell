@@ -18,8 +18,9 @@ import Superhaskell.Data.Entities
 import Superhaskell.Math
 
 updateWorld :: RandomGen g => GameState -> Rand g GameState
-updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V3 vpl _ _) _)} = do
-  generated <- generate vp (gsGenState gs)
+updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V3 vpl vpt _) (V2 _ vph))} = do
+  let lastPlatformY = maximum $ (vpt+vph/2):map ((^._y) . rightBottom . eBox) (gsEntityList gs)
+  generated <- generate vp lastPlatformY (gsGenState gs)
   let nBound = maximum $ genBound (gsGenState gs):map ((^._x) . rightBottom . eBox) generated
   let pruned = prune vpl es
   let nGenState = (gsGenState gs) { genBound = nBound }
@@ -33,12 +34,12 @@ prune vpleft = filterOthers (not . isLeftOfViewport vpleft)
 -- TODO correct height
 -- We partition the world (horizontally) into partitionWidth wide sections (at least 1)
 -- In each partition we generate a single platform
-generate :: RandomGen g => Box-> GenState -> Rand g [Entity]
-generate _vp@(Box (V3 l t _) (V2 w h)) _gs@GenState{genBound = bound}
+generate :: RandomGen g => Box -> Float -> GenState -> Rand g [Entity]
+generate _vp@(Box (V3 l t _) (V2 w h)) lastY _gs@GenState{genBound = bound}
   | bound >= (l+w+genAhead) = return []
   | otherwise = do
     let parts = partition bound (l+w+genAhead)
-    mapM (generatePlatform (t+h/4, t+h*3/4)) parts
+    mapM (generatePlatform (lastY-h/2, lastY))parts
 
 partition :: Float -> Float -> [(Float, Float)]
 partition l r = zip parts (tail' parts)
@@ -48,7 +49,7 @@ partition l r = zip parts (tail' parts)
 
 generatePlatform :: RandomGen g => (Float, Float) -> (Float, Float) -> Rand g Entity
 generatePlatform (b, t) (l, r)= do
-    pos_x <- getRandomR (l, r) -- TODO Actually not 100% correct because it ignores width - recheck this
+    pos_x <- getRandomR (l, r-3)
     pos_y <- getRandomR (b, t)
     let p = platform (V3 pos_x pos_y 0) 3
     return p
