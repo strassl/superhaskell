@@ -10,6 +10,8 @@ module Superhaskell.Generation (updateWorld) where
 
 import Control.Monad.Random
 import Control.Lens
+import Data.Function (on)
+import Data.List (maximumBy)
 import Linear.V2
 import Linear.V3 (V3 (..))
 import Superhaskell.Data.GameState
@@ -18,8 +20,9 @@ import Superhaskell.Data.Entities
 import Superhaskell.Math
 
 updateWorld :: RandomGen g => GameState -> Rand g GameState
-updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V3 vpl vpt _) (V2 _ vph))} = do
-  let lastPlatformY = maximum $ (vpt+vph/2):map ((^._y) . rightBottom . eBox) (gsEntityList gs)
+updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V3 vpl vpt _) (V2 vpw vph))} = do
+  -- TODO handle player here
+  let lastPlatformY = (^._y) $ maximumBy (compare `on` (^._x)) $ (V2 (vpw/2+1) vph):map (rightTop . eBox) (gsEntityList gs)
   generated <- generate vp lastPlatformY (gsGenState gs)
   let nBound = maximum $ genBound (gsGenState gs):map ((^._x) . rightBottom . eBox) generated
   let pruned = prune vpl es
@@ -39,7 +42,7 @@ generate _vp@(Box (V3 l t _) (V2 w h)) lastY _gs@GenState{genBound = bound}
   | bound >= (l+w+genAhead) = return []
   | otherwise = do
     let parts = partition bound (l+w+genAhead)
-    mapM (generatePlatform (lastY-h/2, lastY))parts
+    mapM (generatePlatform (lastY-h/4, lastY+h/8))parts
 
 partition :: Float -> Float -> [(Float, Float)]
 partition l r = zip parts (tail' parts)
