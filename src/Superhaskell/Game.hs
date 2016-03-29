@@ -7,7 +7,6 @@ import           Control.Concurrent.STM
 import           Control.DeepSeq
 import           Control.Monad
 import           Data.Foldable
-import           Linear
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Drawing
