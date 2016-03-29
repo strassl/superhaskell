@@ -18,10 +18,10 @@ import Superhaskell.Data.Entities
 import Superhaskell.Math
 
 updateWorld :: RandomGen g => GameState -> Rand g GameState
-updateWorld gs@GameState{gsEntities = es, gsViewPort = vp} = do
+updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V3 vpl _ _) _)} = do
   generated <- generate vp (gsGenState gs)
   let nBound = maximum $ genBound (gsGenState gs):map ((^._x) . rightBottom . eBox) generated
-  let pruned = prune 0 es -- TODO needs an actual left bound
+  let pruned = prune vpl es
   let nGenState = (gsGenState gs) { genBound = nBound }
   let nes = pruned `appendOthers` generated
   return gs{ gsEntities = nes
