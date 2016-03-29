@@ -1,27 +1,29 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.Game (run) where
 
-import           Control.Monad.Random
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.DeepSeq
 import           Control.Monad
+import           Control.Monad.Random
 import           Data.Foldable
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Drawing
 import           Superhaskell.Generation
 import           Superhaskell.Processing
-import           Superhaskell.SDL.Input       (getInputState)
-import           Superhaskell.SDL.Rendering   (SDLState, executeRenderList,
-                                               initRendering)
+import           Superhaskell.SDL.Init        (initSDL)
+import           Superhaskell.SDL.Input       (SDLInputState, getInputState)
+import           Superhaskell.SDL.Rendering   (SDLRenderingState,
+                                               executeRenderList)
 import qualified System.Clock                 as C
 import           Text.Printf
 
 data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
                                        , rlsInputStateBox :: TVar InputState
                                        , rlsInputState    :: InputState
-                                       , rlsSdlState      :: SDLState }
+                                       , rlsSdlRState     :: SDLRenderingState
+                                       , rlsSdlIState     :: SDLInputState }
 
 data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
                                    , glsGameState     :: GameState
@@ -34,7 +36,7 @@ run = do
   putStrLn "SUPERHASKELL"
   putStrLn "============"
   -- Init SDL
-  sdlState <- initRendering
+  (sdlRState, sdlIState) <- initSDL
   -- Init shared data boxes
   inputStateBox <- atomically $ newTVar defaultInputState
   gameStateBox <- atomically $ newTVar initialGameState
@@ -48,7 +50,8 @@ run = do
   runRenderLoop startTime 0 (RenderLoopState gameStateBox
                                              inputStateBox
                                              defaultInputState
-                                             sdlState)
+                                             sdlRState
+                                             sdlIState)
   putStrLn "Bye!"
 
 runRenderLoop :: Double -> Int -> RenderLoopState -> IO ()
@@ -66,10 +69,10 @@ runRenderLoop fpsStartTime fpsCount rls = do
 
 renderStep :: RenderLoopState -> IO (RenderLoopState, Bool)
 renderStep rls = do
-  inputState <- getInputState (rlsInputState rls)
+  inputState <- getInputState (rlsSdlIState rls) (rlsInputState rls)
   inputState `deepseq` atomicWrite (rlsInputStateBox rls) inputState
   gameState <- atomicRead (rlsGameStateBox rls)
-  executeRenderList (rlsSdlState rls) (gsViewPort gameState) (toRenderList gameState)
+  executeRenderList (rlsSdlRState rls) (gsViewPort gameState) (toRenderList gameState)
   return (rls{rlsInputState = inputState}, gsRunning gameState)
 
 printFPS :: Int -> Double -> IO ()

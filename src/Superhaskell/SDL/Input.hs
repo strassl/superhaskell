@@ -1,24 +1,71 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.SDL.Input (
-  getInputState
+  SDLInputState, initInput, getInputState
 ) where
 
+import           Data.Int
+import qualified Data.Vector                  as V
 import           Linear
 import           SDL
 import           Superhaskell.Data.InputState
+import           Superhaskell.Math
+
+data SDLInputState =
+  SDLInputState { sdlsJoystick :: Maybe Joystick
+                }
+
+initInput :: IO SDLInputState
+initInput = do
+  joysticks <- availableJoysticks
+  joystick <- if V.null joysticks
+    then do
+      print "No joystick :("
+      return Nothing
+    else do
+      print (V.head joysticks)
+      Just <$> openJoystick (V.head joysticks)
+
+  return $ SDLInputState joystick
 
 -- | Updates the current input state.
-getInputState :: InputState -> IO InputState
-getInputState is = do
+getInputState :: SDLInputState -> InputState -> IO InputState
+getInputState state is = do
   events <- pollEvents
   keyboardState <- getKeyboardState
+  joystickState <- getJoystickButtonsState (sdlsJoystick state)
+  let kDir = keyboardDirection keyboardState
+  jDir <- getJoystickDirection (sdlsJoystick state)
   return is{ isWantQuit = isWantQuit is || any isQuit events
-           , isDirection = keyboardDirection keyboardState
-           , isJump = keyboardState ScancodeSpace }
+           , isDirection = if kDir == V2 0 0 then jDir else kDir
+           , isJump = keyboardState ScancodeSpace || joystickState 0 }
 
 isQuit :: Event -> Bool
 isQuit (Event _ (WindowClosedEvent _)) = True
 isQuit _ = False
+
+getJoystickButtonsState :: Maybe Joystick -> IO (Int -> Bool)
+getJoystickButtonsState Nothing = return $ const False
+getJoystickButtonsState (Just j) = do
+  buttons <- fromIntegral <$> numButtons j
+  states <- V.generateM buttons (buttonPressed j . fromIntegral)
+  return (\i -> (i < V.length states) && (states V.! i))
+
+getJoystickDirection :: Maybe Joystick -> IO (V2 Float)
+getJoystickDirection Nothing = return $ V2 0 0
+getJoystickDirection (Just j) = do
+  axes <- numAxes j
+  if axes < 2
+    then return $ V2 0 0
+    else do
+      x <- axisPositionToFloat <$> axisPosition j 0
+      y <- axisPositionToFloat <$> axisPosition j 1
+      let v = V2 x y
+      let v' = if norm v > 1 then normalize v else v
+      return v'
+
+axisPositionToFloat :: Int16 -> Float
+axisPositionToFloat p =
+  let p' = fromIntegral p / 32767
+  in if abs p' < eps then 0 else p'
 
 keyboardDirection :: (Scancode -> Bool) -> V2 Float
 keyboardDirection keyboard =

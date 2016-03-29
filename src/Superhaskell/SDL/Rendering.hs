@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 module Superhaskell.SDL.Rendering (
-  SDLState, initRendering, executeRenderList
+  SDLRenderingState, initRendering, executeRenderList
 ) where
 
 import           Codec.Picture             (convertRGBA8, imageData,
@@ -36,18 +36,18 @@ instance Uniform M33 where
 
 type Textures = M.HashMap T.Text TextureObject
 
-data SDLState = SDLState { sdlsWindow                  :: SDL.Window
-                         , _sdlsContext                :: SDL.GLContext
-                         , sdlsTextures                :: Textures
-                         , _sdlsSpriteProgram          :: Program
-                         , sdlsSpriteProgramUTransform :: UniformLocation
-                         , _sdlsSpriteProgramUTexture  :: UniformLocation
-                         , _sdlsUnitSquareVao          :: VertexArrayObject
-                         , _sdlsUnitSquareVbo          :: BufferObject }
+data SDLRenderingState =
+  SDLRenderingState { sdlsWindow                  :: SDL.Window
+                    , _sdlsContext                :: SDL.GLContext
+                    , sdlsTextures                :: Textures
+                    , _sdlsSpriteProgram          :: Program
+                    , sdlsSpriteProgramUTransform :: UniformLocation
+                    , _sdlsSpriteProgramUTexture  :: UniformLocation
+                    , _sdlsUnitSquareVao          :: VertexArrayObject
+                    , _sdlsUnitSquareVbo          :: BufferObject }
 
-initRendering :: IO SDLState
+initRendering :: IO SDLRenderingState
 initRendering = do
-  SDL.initializeAll
   window <- SDL.createWindow "Superhaskell"
                              SDL.defaultWindow{ SDL.windowInitialSize = V2 1280 720
                                               , SDL.windowOpenGL = Just SDL.defaultOpenGL{
@@ -74,14 +74,14 @@ initRendering = do
   uniform spriteProgramUTexture $= TextureUnit 0
   bindVertexArrayObject $= Just unitSquareVao
   
-  return $ SDLState window
-                    context
-                    textures
-                    spriteProgram
-                    spriteProgramUTransform
-                    spriteProgramUTexture
-                    unitSquareVao
-                    unitSquareVbo
+  return $ SDLRenderingState window
+                             context
+                             textures
+                             spriteProgram
+                             spriteProgramUTransform
+                             spriteProgramUTexture
+                             unitSquareVao
+                             unitSquareVbo
 
 setupShaders :: IO Program
 setupShaders = do
@@ -165,14 +165,14 @@ loadTexture textures (path, name) = do
     Left err ->
       fail $ "Could not load texture " ++ path ++ ": " ++ err
 
-executeRenderList :: SDLState -> Box -> RenderList -> IO ()
+executeRenderList :: SDLRenderingState -> Box -> RenderList -> IO ()
 executeRenderList sdls viewport renderList = do
   clear [ColorBuffer]
   forM_ (sortBy compareRenderCommand renderList)
         (executeRenderCommand sdls viewport)
   SDL.glSwapWindow (sdlsWindow sdls)
 
-executeRenderCommand :: SDLState -> Box -> RenderCommand -> IO ()
+executeRenderCommand :: SDLRenderingState -> Box -> RenderCommand -> IO ()
 executeRenderCommand sdls (Box vpAnchor (V2 u v)) (RenderSprite tex Box{boxAnchor=bAnchor, boxSize=V2 w h}) = do
     let (V3 x y _) = bAnchor - vpAnchor
     -- http://tinyurl.com/guuob3r

@@ -27,6 +27,7 @@ library
                      , Superhaskell.RenderList
                      , Superhaskell.SDL.Rendering
                      , Superhaskell.SDL.Input
+                     , Superhaskell.SDL.Init
                      , Superhaskell.Math
   build-depends:       base
                      , sdl2
