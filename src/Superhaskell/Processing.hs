@@ -49,8 +49,8 @@ applyBehavior is gs box bv@PlayerBehavior{bvFalling=falling} =
       (falling', gravityDeltaPos) = applyGravity falling
       moveDeltaPos = V2 (inputX * playerBaseSpeed) 0
       box' = moveBox (gravityDeltaPos ^+^ moveDeltaPos) box
-      offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 eps) SceneryCGroup gs)
-              && null (entitiesAtInGroup (rightBottom box + V2 0 eps) SceneryCGroup gs)
+      offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 (2 * eps)) SceneryCGroup gs)
+              && null (entitiesAtInGroup (rightBottom box + V2 0 (2 * eps)) SceneryCGroup gs)
       jump = if isJump is then Just (-playerJumpTime) else Nothing
   in (box', bv{bvFalling=falling' <|> jump <|> if offEdge then Just 1 else Nothing})
 applyBehavior _ _ box b = (box, b)
