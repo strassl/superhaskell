@@ -28,7 +28,7 @@ tickGameState is gs =
     else (collideEntities . tickEntities is) gs
 
 tickEntities :: InputState -> GameState -> GameState
-tickEntities is gs = gs{ gsEntities = map (tickEntity is gs) (gsEntities gs) }
+tickEntities is gs = gs{ gsEntities = fmap (tickEntity is gs) (gsEntities gs) }
 
 tickEntity :: InputState -> GameState -> Entity -> Entity
 tickEntity is gs e@Entity{eBox=box, eBehavior=behavior} =
@@ -58,7 +58,7 @@ collideEntities gs =
                            if collidesWith cg (eCollisionGroup e)
                              then Map.insertWith (\[n] o -> n:o) cg [e] m
                              else m
-      entities' = map (\s -> applyCollisions s (collideEntity entities s)) (gsEntities gs)
+      entities' = fmap (\s -> applyCollisions s (collideEntity entities s)) (gsEntities gs)
   in gs{gsEntities=entities'}
 
 collideEntity :: Map.Map CollisionGroup [Entity] -> Entity -> [Entity]

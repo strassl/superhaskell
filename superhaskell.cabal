@@ -20,6 +20,7 @@ library
   other-modules:       Superhaskell.Data.GameState
                      , Superhaskell.Data.InputState
                      , Superhaskell.Data.Entity
+                     , Superhaskell.Data.Entities
                      , Superhaskell.Generation
                      , Superhaskell.Processing
                      , Superhaskell.Drawing

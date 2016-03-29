@@ -14,6 +14,7 @@ import Linear.V2
 import Linear.V3 (V3 (..))
 import Superhaskell.Data.GameState
 import Superhaskell.Data.Entity
+import Superhaskell.Data.Entities
 import Superhaskell.Math
 
 updateWorld :: RandomGen g => GameState -> Rand g GameState
@@ -22,12 +23,12 @@ updateWorld gs@GameState{gsEntities = es, gsViewPort = vp} = do
   let nBound = maximum $ genBound (gsGenState gs):map ((^._x) . rightBottom . eBox) generated
   let pruned = prune 0 es -- TODO needs an actual left bound
   let nGenState = (gsGenState gs) { genBound = nBound }
-  let nes = pruned ++ generated
+  let nes = pruned `appendOthers` generated
   return gs{ gsEntities = nes
            , gsGenState = nGenState }
 
-prune :: Float -> [Entity] -> [Entity]
-prune vpleft = filter (not . isLeftOfViewport vpleft)
+prune :: Float -> Entities -> Entities
+prune vpleft = filterOthers (not . isLeftOfViewport vpleft)
 
 -- TODO Use dynamic viewport here
 -- TODO correct height

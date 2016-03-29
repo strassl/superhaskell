@@ -4,19 +4,22 @@
 module Superhaskell.Data.GameState (
     GameState(..),
     GenState(..),
+    gsEntityList,
     initialGameState,
     entitiesAt,
     entitiesAtInGroup
 ) where
 
+import           Data.Foldable
 import           Control.DeepSeq
 import           GHC.Generics
 import           Superhaskell.Data.Entity
+import           Superhaskell.Data.Entities
 import           Superhaskell.Math
 import           Linear.V2 (V2(..))
 import           Linear.V3 (V3(..))
 
-data GameState = GameState { gsEntities :: [Entity]
+data GameState = GameState { gsEntities :: Entities
                            , gsRunning  :: Bool
                            , gsGenState :: GenState
                            , gsViewPort :: V2 Float
@@ -29,10 +32,13 @@ data GenState = GenState { genBound :: Float
 
 initialGameState :: GameState
 initialGameState = GameState { gsRunning = True
-                             , gsEntities = [player]
+                             , gsEntities = makeEntities player
                              , gsGenState = initialGenState
                              , gsViewPort = V2 16 9
                              }
+
+gsEntityList :: GameState -> [Entity]
+gsEntityList = toList . gsEntities
 
 -- Stores information that the generation component needs across iterations
 -- Such as up to where it already generated the world
@@ -40,7 +46,7 @@ initialGenState :: GenState
 initialGenState = GenState { genBound = 0.0}
 
 entitiesAt :: V2 Float -> GameState -> [Entity]
-entitiesAt p gs = filter (boxContains p . eBox) (gsEntities gs)
+entitiesAt p gs = filter (boxContains p . eBox) (gsEntityList gs)
 
 entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
 entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
