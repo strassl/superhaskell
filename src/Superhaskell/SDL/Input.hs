@@ -13,7 +13,8 @@ getInputState is = do
   events <- pollEvents
   keyboardState <- getKeyboardState
   return is{ isWantQuit = isWantQuit is || any isQuit events
-           , isDirection = keyboardDirection keyboardState }
+           , isDirection = keyboardDirection keyboardState
+           , isJump = keyboardState ScancodeSpace }
 
 isQuit :: Event -> Bool
 isQuit (Event _ (WindowClosedEvent _)) = True

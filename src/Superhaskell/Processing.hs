@@ -14,6 +14,10 @@ import           Superhaskell.Math
 playerBaseSpeed :: Float
 playerBaseSpeed = 3 / 60
 
+-- Number of ticks the player needs to reach the apex of a jump.
+playerJumpTime :: Float
+playerJumpTime = 0.5 * 60
+
 -- Gravity in units/tick².
 gravity :: Float
 gravity = 0.5 / 60
@@ -31,7 +35,7 @@ tickGameState is gs =
 
 
 moveViewPort :: GameState -> GameState
-moveViewPort gs@GameState{gsViewPort = (Box lt wh)} = gs{gsViewPort = Box nlt wh}
+moveViewPort gs@GameState{gsViewPort = (Box _ wh)} = gs{gsViewPort = Box nlt wh}
   where player = esPlayer $ gsEntities gs
         nlt = over _xy (\v -> v-(wh / 2)) (boxAnchor $ eBox player)
 
@@ -51,7 +55,8 @@ applyBehavior is gs box bv@PlayerBehavior{bvFalling=falling} =
       box' = moveBox (gravityDeltaPos ^+^ moveDeltaPos) box
       offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 eps) SceneryCGroup gs)
               && null (entitiesAtInGroup (rightBottom box + V2 0 eps) SceneryCGroup gs)
-  in (box', bv{bvFalling=falling' <|> if offEdge then Just 1 else Nothing})
+      jump = if isJump is then Just (-playerJumpTime) else Nothing
+  in (box', bv{bvFalling=falling' <|> jump <|> if offEdge then Just 1 else Nothing})
 applyBehavior _ _ box b = (box, b)
 
 applyGravity :: Maybe Float -> (Maybe Float, V2 Float)
