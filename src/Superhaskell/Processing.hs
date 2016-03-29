@@ -9,6 +9,7 @@ import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Math
+import Data.Traversable
 
 -- Base speed in units/tick.
 playerBaseSpeed :: Float
@@ -22,58 +23,62 @@ gravity = 0.5 / 60
 eps :: Float
 eps = 1 / 1024
 
--- Advances the game state by one tick.
-tickGameState :: InputState -> GameState -> GameState
-tickGameState is gs =
-  if isWantQuit is
-    then gs{ gsRunning = False }
-    else (moveViewPort . collideEntities . tickEntities is) gs
-
+tickGameState :: Game ()
+tickGameState = do
+  wantQuit <- asksInput isWantQuit
+  if wantQuit
+    then modifyGameState stopGame
+    else tickEntities >> collideEntities >> modifyGameState moveViewPort
 
 moveViewPort :: GameState -> GameState
 moveViewPort gs@GameState{gsViewPort = (Box lt wh)} = gs{gsViewPort = Box nlt wh}
   where player = esPlayer $ gsEntities gs
         nlt = over _xy (\v -> v-(wh / 2)) (boxAnchor $ eBox player)
 
-tickEntities :: InputState -> GameState -> GameState
-tickEntities is gs = gs{ gsEntities = fmap (tickEntity is gs) (gsEntities gs) }
+tickEntities :: Game ()
+tickEntities = modifyGameStateM $ \gs -> do
+  entities' <- mapM tickEntity (gsEntities gs)
+  return gs{gsEntities=entities'}
 
-tickEntity :: InputState -> GameState -> Entity -> Entity
-tickEntity is gs e@Entity{eBox=box, eBehavior=behavior} =
-  let (box', behavior') = applyBehavior is gs box behavior
-  in e{eBox=box', eBehavior=behavior'}
+tickEntity :: Entity -> Game Entity
+tickEntity e@Entity{eBox=box, eBehavior=behavior} = do
+  (box', behavior') <- applyBehavior box behavior
+  return e{eBox=box', eBehavior=behavior'}
 
-applyBehavior :: InputState -> GameState -> Box -> Behavior -> (Box, Behavior)
-applyBehavior is gs box bv@PlayerBehavior{bvFalling=falling} =
-  let (V2 inputX _) = isDirection is
-      (falling', gravityDeltaPos) = applyGravity falling
+applyBehavior :: Box -> Behavior -> Game (Box, Behavior)
+applyBehavior box bv@PlayerBehavior{bvFalling=falling} = do
+  (V2 inputX _) <- asksInput isDirection
+  gs <- askGameState
+  let (falling', gravityDeltaPos) = applyGravity falling
       moveDeltaPos = V2 (inputX * playerBaseSpeed) 0
       box' = moveBox (gravityDeltaPos ^+^ moveDeltaPos) box
       offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 eps) SceneryCGroup gs)
               && null (entitiesAtInGroup (rightBottom box + V2 0 eps) SceneryCGroup gs)
-  in (box', bv{bvFalling=falling' <|> if offEdge then Just 1 else Nothing})
-applyBehavior _ _ box b = (box, b)
+  return (box', bv{bvFalling=falling' <|> if offEdge then Just 1 else Nothing})
+applyBehavior box b =
+  return (box, b)
 
 applyGravity :: Maybe Float -> (Maybe Float, V2 Float)
 applyGravity (Just time) = (Just (time + 1), V2 0 (gravity * time))
 applyGravity Nothing = (Nothing, V2 0 0)
 
-collideEntities :: GameState -> GameState
-collideEntities gs =
-  let entities = foldr f Map.empty (gsEntities gs)
-                   where f e m = foldr (g e) m [minBound..]
-                         g e cg m =
-                           if collidesWith cg (eCollisionGroup e)
-                             then Map.insertWith (\[n] o -> n:o) cg [e] m
-                             else m
-      entities' = fmap (\s -> applyCollisions s (collideEntity entities s)) (gsEntities gs)
-  in gs{gsEntities=entities'}
+collideEntities :: Game ()
+collideEntities =
+  modifyGameStateM $ \gs -> do
+    let entities = foldr f Map.empty (gsEntities gs)
+                     where f e m = foldr (g e) m [minBound..]
+                           g e cg m =
+                             if collidesWith cg (eCollisionGroup e)
+                               then Map.insertWith (\[n] o -> n:o) cg [e] m
+                               else m
+    entities' <- mapM (\s -> applyCollisions s (collideEntity entities s)) (gsEntities gs)
+    return gs{gsEntities=entities'}
 
 collideEntity :: Map.Map CollisionGroup [Entity] -> Entity -> [Entity]
 collideEntity others e = filter (boxOverlaps (eBox e) . eBox)
                                 (Map.findWithDefault [] (eCollisionGroup e) others)
 
-applyCollisions :: Entity -> [Entity] -> Entity
+applyCollisions :: Entity -> [Entity] -> Game Entity
 applyCollisions e os =
   let (box', behavior') =
         foldr (\Entity{eBox=oBox, eBehavior=oBv} (box, bv) -> applyCollision oBox oBv box bv)
@@ -83,8 +88,8 @@ applyCollisions e os =
 
 -- | Applys the collision and is supposed to return an updated version of the
 -- *second* entity (the subject). The second entity is the object.
-applyCollision :: Box -> Behavior -> Box -> Behavior -> (Box, Behavior)
+applyCollision :: Box -> Behavior -> Box -> Behavior -> Game (Box, Behavior)
 applyCollision obox _ box bv@PlayerBehavior{} =
-  (pushOut obox box, bv{bvFalling=Nothing})
+  return (pushOut obox box, bv{bvFalling=Nothing})
 applyCollision _ _ box e =
-  (box, e)
+  return (box, e)
