@@ -34,8 +34,8 @@ prune vpleft = filterOthers (not . isLeftOfViewport vpleft)
 -- TODO correct height
 -- We partition the world (horizontally) into partitionWidth wide sections (at least 1)
 -- In each partition we generate a single platform
-generate :: RandomGen g => V2 Float -> GenState -> Rand g [Entity]
-generate _vp@(V2 w h) _gs@GenState{genBound = bound}
+generate :: RandomGen g => Box-> GenState -> Rand g [Entity]
+generate _vp@(Box (V3 l t _) (V2 w h)) _gs@GenState{genBound = bound}
   | bound >= w = return []
   | otherwise = do
     let parts = partition bound w

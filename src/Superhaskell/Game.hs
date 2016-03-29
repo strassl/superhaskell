@@ -70,7 +70,7 @@ renderStep rls = do
   inputState <- getInputState (rlsInputState rls)
   inputState `deepseq` atomicWrite (rlsInputStateBox rls) inputState
   gameState <- atomicRead (rlsGameStateBox rls)
-  executeRenderList (rlsSdlState rls) (V2 16 9) (toRenderList gameState)
+  executeRenderList (rlsSdlState rls) (gsViewPort gameState) (toRenderList gameState)
   return (rls{rlsInputState = inputState}, gsRunning gameState)
 
 printFPS :: Int -> Double -> IO ()

@@ -22,7 +22,7 @@ import           Linear.V3 (V3(..))
 data GameState = GameState { gsEntities :: Entities
                            , gsRunning  :: Bool
                            , gsGenState :: GenState
-                           , gsViewPort :: V2 Float
+                           , gsViewPort :: Box
                            }
                deriving (Show, Generic, NFData)
 
@@ -34,7 +34,7 @@ initialGameState :: GameState
 initialGameState = GameState { gsRunning = True
                              , gsEntities = makeEntities player
                              , gsGenState = initialGenState
-                             , gsViewPort = V2 16 9
+                             , gsViewPort = Box (V3 0 0 0) (V2 16 9)
                              }
 
 gsEntityList :: GameState -> [Entity]

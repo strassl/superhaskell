@@ -165,15 +165,16 @@ loadTexture textures (path, name) = do
     Left err ->
       fail $ "Could not load texture " ++ path ++ ": " ++ err
 
-executeRenderList :: SDLState -> V2 Float -> RenderList -> IO ()
+executeRenderList :: SDLState -> Box -> RenderList -> IO ()
 executeRenderList sdls viewport renderList = do
   clear [ColorBuffer]
   forM_ (sortBy compareRenderCommand renderList)
         (executeRenderCommand sdls viewport)
   SDL.glSwapWindow (sdlsWindow sdls)
 
-executeRenderCommand :: SDLState -> V2 Float -> RenderCommand -> IO ()
-executeRenderCommand sdls (V2 u v) (RenderSprite tex Box{boxAnchor=V3 x y _, boxSize=V2 w h}) = do
+executeRenderCommand :: SDLState -> Box -> RenderCommand -> IO ()
+executeRenderCommand sdls (Box vpAnchor (V2 u v)) (RenderSprite tex Box{boxAnchor=bAnchor, boxSize=V2 w h}) = do
+    let (V3 x y _) = bAnchor - vpAnchor
     -- http://tinyurl.com/guuob3r
     uniform (sdlsSpriteProgramUTransform sdls) $=
       M33 (V3 (V3 (2*w/u) 0        (2*x/u - 1))
