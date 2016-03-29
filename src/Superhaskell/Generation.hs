@@ -30,16 +30,15 @@ updateWorld gs@GameState{gsEntities = es, gsViewPort = vp} = do
 prune :: Float -> Entities -> Entities
 prune vpleft = filterOthers (not . isLeftOfViewport vpleft)
 
--- TODO Use dynamic viewport here
 -- TODO correct height
 -- We partition the world (horizontally) into partitionWidth wide sections (at least 1)
 -- In each partition we generate a single platform
 generate :: RandomGen g => Box-> GenState -> Rand g [Entity]
 generate _vp@(Box (V3 l t _) (V2 w h)) _gs@GenState{genBound = bound}
-  | bound >= w = return []
+  | bound >= (l+w) = return []
   | otherwise = do
-    let parts = partition bound w
-    mapM (generatePlatform (0, h)) parts
+    let parts = partition bound (l+w)
+    mapM (generatePlatform (t+h+1, t+h+1)) parts
 
 partition :: Float -> Float -> [(Float, Float)]
 partition l r = zip parts (tail' parts)
@@ -71,7 +70,7 @@ silverCoin pos = Entity { eBox = Box pos (V2 1 1)
                         , eCollisionGroup = NilCGroup}
 
 partitionWidth :: Float
-partitionWidth = 4
+partitionWidth = 0.5
 
 tail' :: [a] -> [a]
 tail' [] = []
