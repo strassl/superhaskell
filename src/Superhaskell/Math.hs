@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric  #-}
 module Superhaskell.Math (
     eps
+  , Edge(..)
   , Box(..)
   , leftTop, leftBottom, rightBottom, rightTop
   , moveBox, pushOut
@@ -18,6 +19,9 @@ import           Linear
 -- A small number.
 eps :: Float
 eps = 1 / 1024
+
+data Edge = LeftEdge | TopEdge | RightEdge | BottomEdge
+          deriving (Show, Read, Eq, Ord, Enum, Bounded, Generic, NFData)
 
 data Box = Box { boxAnchor :: V3 Float
                , boxSize   :: V2 Float }
@@ -58,12 +62,13 @@ boxOverlaps a b = anyCorner a b || anyCorner b a
 
 -- | When a and b overlap, b will be pushed out of a using the shortest possible
 -- distance. If a and b do not overlap... it does strange things, I guess.
-pushOut :: Box -> Box -> Box
+-- It returns the edge of the *second* box that has the contact now.
+pushOut :: Box -> Box -> (Box, Edge)
 pushOut Box{boxAnchor=V3 ax ay _, boxSize=V2 aw ah}
         b@Box{boxAnchor=V3 bx by _, boxSize=V2 bw bh} =
-  let dists = [ V2 (ax - (bx + bw)) 0
-              , V2 (ax + aw - bx)   0
-              , V2 0                (ay - (by + bh))
-              , V2 0                (ay + ah - by)   ]
-      minDist = minimumBy (comparing norm) dists
-  in moveBox (minDist + signum minDist * V2 eps eps) b
+  let dists = [ (V2 (ax - (bx + bw)) 0,                RightEdge)
+              , (V2 (ax + aw - bx)   0,                LeftEdge)
+              , (V2 0                (ay - (by + bh)), BottomEdge)
+              , (V2 0                (ay + ah - by),   TopEdge) ]
+      minDist = minimumBy (comparing (norm . fst)) dists
+  in (moveBox (fst minDist + signum (fst minDist) * V2 eps eps) b, snd minDist)

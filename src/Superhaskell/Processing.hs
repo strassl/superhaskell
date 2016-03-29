@@ -85,7 +85,8 @@ applyCollisions e os =
 -- | Applys the collision and is supposed to return an updated version of the
 -- *second* entity (the subject). The second entity is the object.
 applyCollision :: Box -> Behavior -> Box -> Behavior -> (Box, Behavior)
-applyCollision obox _ box bv@PlayerBehavior{} =
-  (pushOut obox box, bv{bvFalling=Nothing})
+applyCollision obox _ box bv@PlayerBehavior{bvFalling=falling} =
+  let (box', edge) = pushOut obox box
+  in (box', bv{bvFalling=if edge == BottomEdge then Nothing else falling})
 applyCollision _ _ box e =
   (box, e)
