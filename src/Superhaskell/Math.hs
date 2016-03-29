@@ -1,7 +1,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric  #-}
 module Superhaskell.Math (
-    Box(..)
+    eps
+  , Box(..)
   , leftTop, leftBottom, rightBottom, rightTop
   , moveBox, pushOut
   , boxContains, boxOverlaps
@@ -13,6 +14,10 @@ import           Data.List
 import           Data.Ord
 import           GHC.Generics
 import           Linear
+
+-- A small number.
+eps :: Float
+eps = 1 / 1024
 
 data Box = Box { boxAnchor :: V3 Float
                , boxSize   :: V2 Float }
@@ -60,4 +65,5 @@ pushOut Box{boxAnchor=V3 ax ay _, boxSize=V2 aw ah}
               , V2 (ax + aw - bx)   0
               , V2 0                (ay - (by + bh))
               , V2 0                (ay + ah - by)   ]
-  in moveBox (minimumBy (comparing norm) dists) b
+      minDist = minimumBy (comparing norm) dists
+  in moveBox (minDist + signum minDist * V2 eps eps) b

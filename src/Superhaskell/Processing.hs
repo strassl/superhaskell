@@ -22,10 +22,6 @@ playerJumpTime = 0.5 * 60
 gravity :: Float
 gravity = 0.5 / 60
 
--- A small number.
-eps :: Float
-eps = 1 / 1024
-
 -- Advances the game state by one tick.
 tickGameState :: InputState -> GameState -> GameState
 tickGameState is gs =
