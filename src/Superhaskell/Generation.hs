@@ -35,9 +35,9 @@ prune vpleft = filterOthers (not . isLeftOfViewport vpleft)
 -- In each partition we generate a single platform
 generate :: RandomGen g => Box-> GenState -> Rand g [Entity]
 generate _vp@(Box (V3 l t _) (V2 w h)) _gs@GenState{genBound = bound}
-  | bound >= (l+w) = return []
+  | bound >= (l+w+genAhead) = return []
   | otherwise = do
-    let parts = partition bound (l+w)
+    let parts = partition bound (l+w+genAhead)
     mapM (generatePlatform (t+h/4, t+h*3/4)) parts
 
 partition :: Float -> Float -> [(Float, Float)]
@@ -70,7 +70,11 @@ silverCoin pos = Entity { eBox = Box pos (V2 1 1)
                         , eCollisionGroup = NilCGroup}
 
 partitionWidth :: Float
-partitionWidth = 0.5
+partitionWidth = 4
+
+genAhead :: Float
+genAhead = 8
+
 
 tail' :: [a] -> [a]
 tail' [] = []
