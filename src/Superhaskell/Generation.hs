@@ -8,26 +8,26 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Superhaskell.Generation (updateWorld) where
 
-import Control.Monad.Random
-import Control.Lens
-import Data.Function (on)
-import Data.List (maximumBy)
-import Linear.V2
-import Linear.V3 (V3 (..))
-import Superhaskell.Data.GameState
-import Superhaskell.Data.Entity
-import Superhaskell.Data.Entities
-import Superhaskell.Math
+import           Control.Lens
+import           Control.Monad.Random
+import           Data.Foldable
+import           Data.Function                  (on)
+import           Linear.V2
+import           Linear.V3                      (V3 (..))
+import           Superhaskell.Data.Entities
+import           Superhaskell.Data.GameState
+import           Superhaskell.Entities.Platform
+import           Superhaskell.Math
 
 updateWorld :: RandomGen g => GameState -> Rand g GameState
 updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V3 vpl vpt _) (V2 vpw vph))} = do
   -- TODO handle player here
-  let lastPlatformY = (^._y) $ maximumBy (compare `on` (^._x)) $ (V2 (vpw/2+1) vph):map (rightTop . eBox) (gsEntityList gs)
+  let lastPlatformY = (^._y) $ maximumBy (compare `on` (^._x)) $ fmap (rightTop . eBox) (gsEntities gs)
   generated <- generate vp lastPlatformY (gsGenState gs)
   let nBound = maximum $ genBound (gsGenState gs):map ((^._x) . rightBottom . eBox) generated
   let pruned = prune vpl es
   let nGenState = (gsGenState gs) { genBound = nBound }
-  let nes = pruned `appendOthers` generated
+  let nes = appendOthers generated pruned
   return gs{ gsEntities = nes
            , gsGenState = nGenState }
 
@@ -42,7 +42,7 @@ generate _vp@(Box (V3 l t _) (V2 w h)) lastY _gs@GenState{genBound = bound}
   | bound >= (l+w+genAhead) = return []
   | otherwise = do
     let parts = partition bound (l+w+genAhead)
-    mapM (generatePlatform (lastY-h/4, lastY+h/8))parts
+    mapM (\p -> eWrap <$> generatePlatform (lastY-h/4, lastY+h/8) p) parts
 
 partition :: Float -> Float -> [(Float, Float)]
 partition l r = zip parts (tail' parts)
@@ -50,35 +50,22 @@ partition l r = zip parts (tail' parts)
         pc = floor(w / partitionWidth)
         parts = scanl (+) l (replicate pc partitionWidth)
 
-generatePlatform :: RandomGen g => (Float, Float) -> (Float, Float) -> Rand g Entity
+generatePlatform :: RandomGen g => (Float, Float) -> (Float, Float) -> Rand g Platform
 generatePlatform (b, t) (l, r)= do
     pos_x <- getRandomR (l, r-3)
     pos_y <- getRandomR (b, t)
     let p = platform (V3 pos_x pos_y 0) 3
     return p
 
-isLeftOfViewport :: Float -> Entity -> Bool
-isLeftOfViewport leftBound _e@Entity{eBox = box} = boxRight <= leftBound
-  where boxRight = rightBottom box ^._x
-
-platform :: V3 Float -> Float -> Entity
-platform pos length = Entity { eBox = Box pos (V2 length 0.75)
-                             , eStyle = BoxStyle "ground_stone"
-                             , eBehavior = NoopBehavior
-                             , eCollisionGroup = SceneryCGroup}
-
-silverCoin :: V3 Float -> Entity
-silverCoin pos = Entity { eBox = Box pos (V2 1 1)
-                        , eStyle = BoxStyle "silver_1"
-                        , eBehavior = NoopBehavior
-                        , eCollisionGroup = NilCGroup}
+isLeftOfViewport :: IsEntity e => Float -> e -> Bool
+isLeftOfViewport leftBound e = boxRight <= leftBound
+  where boxRight = rightBottom (eBox e) ^._x
 
 partitionWidth :: Float
 partitionWidth = 4
 
 genAhead :: Float
 genAhead = 8
-
 
 tail' :: [a] -> [a]
 tail' [] = []

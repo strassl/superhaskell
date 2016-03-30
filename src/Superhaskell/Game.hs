@@ -7,10 +7,13 @@ import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Random
 import           Data.Foldable
+import           Linear
+import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
-import           Superhaskell.Drawing
+import           Superhaskell.Entities.Player
 import           Superhaskell.Generation
+import           Superhaskell.Math
 import           Superhaskell.Processing
 import           Superhaskell.SDL.Init        (initSDL)
 import           Superhaskell.SDL.Input       (SDLInputState, getInputState)
@@ -30,6 +33,13 @@ data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
                                    , glsInputStateBox :: TVar InputState
                                    , glsRandomGen     :: StdGen
                                    }
+
+initialGameState :: GameState
+initialGameState = GameState { gsRunning = True
+                             , gsEntities = makeEntities (eWrap player)
+                             , gsGenState = initialGenState
+                             , gsViewPort = Box (V3 0 0 0) (V2 16 9)
+                             }
 
 run :: IO ()
 run = do
