@@ -9,7 +9,6 @@ module Superhaskell.Data.GameState (
 ) where
 
 import           Control.DeepSeq
-import           Data.Foldable
 import           GHC.Generics
 import           Linear.V2                    (V2 (..))
 import           Linear.V3                    (V3 (..))
@@ -19,16 +18,16 @@ import           Superhaskell.Data.RenderList
 import           Superhaskell.Math
 
 class (Show e, NFData e) => IsEntity e where
-  eTick :: InputState -> GameState -> e -> (GameState, e)
-  eRender :: GameState -> e -> RenderList
-  eCollide :: IsEntity o => o -> GameState -> e -> (GameState, e)
+  eTick :: InputState -> GameState -> Id -> e -> (GameState, e)
+  eRender :: GameState -> Id -> e -> RenderList
+  eCollide :: IsEntity o => Id -> o -> GameState -> Id -> e -> (GameState, e)
   eCollisionGroup :: e -> CollisionGroup
   eBox :: e -> Box
   eWrap :: e -> Entity
 
-  eTick _ = (,)
-  eRender _ _ = []
-  eCollide _ = (,)
+  eTick _ gs _ e = (gs, e)
+  eRender _ _ _ = []
+  eCollide _ _ gs _ e = (gs, e)
   eCollisionGroup _ = NilCGroup
   eBox _ = Box (V3 0 0 0) (V2 0 0)
   eWrap e = Entity e
@@ -42,10 +41,11 @@ instance Show Entity where
 instance NFData Entity where
   rnf (Entity e) = rnf e
 
+-- Urgh newtype wrappers.
 instance IsEntity Entity where
-  eTick is gs (Entity e) = let (gs', e') = eTick is gs e in (gs', Entity e')
-  eRender gs (Entity e) = eRender gs e
-  eCollide other gs (Entity e) = let (gs', e') = eCollide other gs e in (gs', Entity e')
+  eTick is gs eid (Entity e) = let (gs', e') = eTick is gs eid e in (gs', Entity e')
+  eRender gs eid (Entity e) = eRender gs eid e
+  eCollide oid other gs eid (Entity e) = let (gs', e') = eCollide oid other gs eid e in (gs', Entity e')
   eCollisionGroup (Entity e) = eCollisionGroup e
   eBox (Entity e) = eBox e
   eWrap = id
@@ -84,4 +84,4 @@ entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
 entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
 
 toRenderList :: GameState -> RenderList
-toRenderList gs = concatMap (eRender gs) (gsEntities gs)
+toRenderList gs = concat $ mapWithId (eRender gs) (gsEntities gs)

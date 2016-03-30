@@ -34,9 +34,9 @@ instance IsEntity Player where
 
   eBox Player{pos=V2 x y} = Box (V3 x y 0) (V2 0.5970149253731343 1)
 
-  eRender _ p = [RenderSprite "bunny1_stand" (eBox p)]
+  eRender _ _ p = [RenderSprite "bunny1_stand" (eBox p)]
 
-  eTick is gs p@Player{pos=pos, falling=falling} =
+  eTick is gs _ p@Player{pos=pos, falling=falling} =
     let (V2 inputX _) = isDirection is
         box = eBox p
 
@@ -51,7 +51,7 @@ instance IsEntity Player where
         falling' = gravityFalling <|> jump <|> if offEdge then Just 1 else Nothing
     in (gs, p{pos=pos', falling=falling'})
 
-  eCollide other gs p =
+  eCollide _ other gs _ p =
     case eCollisionGroup other of
       SceneryCGroup -> (gs, collideWithScenery other p)
       _ -> (gs, p)

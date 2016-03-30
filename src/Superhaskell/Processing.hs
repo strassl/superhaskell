@@ -1,6 +1,5 @@
 module Superhaskell.Processing (tickGameState, gravity) where
 
-import           Control.Applicative
 import           Control.Lens
 import qualified Data.Map.Strict              as Map
 import           Linear
@@ -25,30 +24,38 @@ moveViewPort gs@GameState{gsViewPort = (Box _ wh)} = gs{gsViewPort = Box nlt wh}
   where player = esPlayer $ gsEntities gs
         nlt = over _xy (\v -> v-(wh / 2)) (boxAnchor $ eBox player)
 
--- TODO !!!! allow GameState updates in eTick
 tickEntities :: InputState -> GameState -> GameState
-tickEntities is gs = gs{gsEntities=fmap (snd . eTick is gs) (gsEntities gs)}
+tickEntities is gs = foldrWithId (tickEntity is) gs (gsEntities gs)
 
--- TODO !!!! allow GameState updates in eCollide
+tickEntity :: InputState -> Id -> Entity -> GameState -> GameState
+tickEntity is eid e gs =
+  let (gs', e') = eTick is gs eid e
+  in gs'{gsEntities=replaceId eid e' (gsEntities gs')}
+
 collideEntities :: GameState -> GameState
 collideEntities gs =
-  let entities = foldr f Map.empty (gsEntities gs)
-                   where f e m = foldr (g e) m [minBound..]
-                         g e cg m =
+  let entities = foldrWithId f Map.empty (gsEntities gs)
+                   where f eid e m = foldr (g eid e) m [minBound..]
+                         g eid e cg m =
                            if collidesWith cg (eCollisionGroup e)
-                             then Map.insertWith (\[n] o -> n:o) cg [e] m
-                             else m
-      entities' = fmap (\s -> applyCollisions s (collideEntity entities s)) (gsEntities gs)
-  in gs{gsEntities=entities'}
+                             then Map.insertWith (\[n] o -> n:o) cg [(eid, e)] m
+                             else m 
+  in foldrWithId (\sid s gs ->
+                    let (gs', s') = applyCollisions gs sid s (collideEntity entities s)
+                    in gs'{gsEntities=replaceId sid s' (gsEntities gs')})
+                 gs
+                 (gsEntities gs)
 
-collideEntity :: Map.Map CollisionGroup [Entity] -> Entity -> [Entity]
-collideEntity others e = filter (boxOverlaps (eBox e) . eBox)
+-- | Finds collitions with an entity.
+collideEntity :: Map.Map CollisionGroup [(Id, Entity)] -> Entity -> [(Id, Entity)]
+collideEntity others e = filter (boxOverlaps (eBox e) . eBox . snd)
                                 (Map.findWithDefault [] (eCollisionGroup e) others)
 
-applyCollisions :: Entity -> [Entity] -> Entity
-applyCollisions = foldr applyCollision
+-- | Applys all collitions to a given subject with all given objects.
+applyCollisions :: GameState -> Id -> Entity -> [(Id, Entity)] -> (GameState, Entity)
+applyCollisions gs eid e others = foldr (applyCollision eid) (gs, e) others
 
 -- | Applys the collision and is supposed to return an updated version of the
--- *second* entity (the subject). The second entity is the object.
-applyCollision :: Entity -> Entity -> Entity
-applyCollision o e = snd $ eCollide o undefined e
+-- subject entity. The second entity is the object entity.
+applyCollision :: Id -> (Id, Entity) -> (GameState, Entity) -> (GameState, Entity)
+applyCollision eid (oid, other) (gs, e) = eCollide oid other gs eid e

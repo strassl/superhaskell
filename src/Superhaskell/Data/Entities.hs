@@ -2,16 +2,22 @@
 {-# LANGUAGE DeriveGeneric  #-}
 module Superhaskell.Data.Entities (
     EntitiesC
+  , Id
   , makeEntities
   , esPlayer
   , filterOthers
   , appendOthers
+  , foldrWithId
+  , mapWithId
+  , replaceId
 ) where
 
 import           Control.DeepSeq
 import           GHC.Generics
 import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
+
+newtype Id = Id Int deriving (Show, Eq)
 
 data EntitiesC a = EntitiesC Int a (HashMap Int a)
                  deriving (Show, Generic, NFData)
@@ -24,6 +30,14 @@ instance Functor EntitiesC where
 
 instance Traversable EntitiesC where
   traverse f (EntitiesC nextId elem0 m) = EntitiesC nextId <$> f elem0 <*> traverse f m
+
+foldrWithId :: (Id -> a -> b -> b) -> b -> EntitiesC a -> b
+foldrWithId f zero (EntitiesC _ elem0 m) =
+  f (Id 0) elem0 (M.foldrWithKey (\k e acc -> f (Id k) e acc) zero m)
+
+mapWithId :: (Id -> a -> b) -> EntitiesC a -> EntitiesC b
+mapWithId f (EntitiesC nextId elem0 m) =
+  EntitiesC nextId (f (Id 0) elem0) (M.mapWithKey (\k e -> f (Id k) e) m)
 
 filterOthers :: (a -> Bool) -> EntitiesC a -> EntitiesC a
 filterOthers p (EntitiesC nextId elem0 m) = EntitiesC nextId elem0 (M.filter p m)
@@ -39,3 +53,7 @@ makeEntities player = EntitiesC 1 player M.empty
 
 esPlayer :: EntitiesC a -> a
 esPlayer (EntitiesC _ elem0 _) = elem0
+
+replaceId :: Id -> a -> EntitiesC a -> EntitiesC a
+replaceId (Id 0) e (EntitiesC nextId _ m) = EntitiesC nextId e m
+replaceId (Id i) e (EntitiesC nextId elem0 m) = EntitiesC nextId elem0 (M.insert i e m)
