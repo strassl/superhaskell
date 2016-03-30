@@ -20,7 +20,6 @@ tickGameState is gs =
     then gs{ gsRunning = False }
     else (moveViewPort . collideEntities . tickEntities is) gs
 
-
 moveViewPort :: GameState -> GameState
 moveViewPort gs@GameState{gsViewPort = (Box _ wh)} = gs{gsViewPort = Box nlt wh}
   where player = esPlayer $ gsEntities gs

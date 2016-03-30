@@ -5,7 +5,7 @@ module Superhaskell.Data.GameState (
     GameState(..), entitiesAt, entitiesAtInGroup, gsEntityList, toRenderList
   , GenState(..), initialGenState -- TODO remove initialGenState
   , CollisionGroup(..), collidesWith
-  , IsEntity(..), Entity(..), Entities
+  , IsEntity(..), Entity, Entities
 ) where
 
 import           Control.DeepSeq
@@ -24,12 +24,14 @@ class (Show e, NFData e) => IsEntity e where
   eCollide :: IsEntity o => o -> GameState -> e -> (GameState, e)
   eCollisionGroup :: e -> CollisionGroup
   eBox :: e -> Box
+  eWrap :: e -> Entity
 
   eTick _ = (,)
   eRender _ _ = []
   eCollide _ = (,)
   eCollisionGroup _ = NilCGroup
   eBox _ = Box (V3 0 0 0) (V2 0 0)
+  eWrap e = Entity e
 
 data Entity where
   Entity :: IsEntity e => e -> Entity
@@ -46,6 +48,7 @@ instance IsEntity Entity where
   eCollide other gs (Entity e) = let (gs', e') = eCollide other gs e in (gs', Entity e')
   eCollisionGroup (Entity e) = eCollisionGroup e
   eBox (Entity e) = eBox e
+  eWrap = id
 
 type Entities = EntitiesC Entity
 

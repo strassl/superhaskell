@@ -36,7 +36,7 @@ data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
 
 initialGameState :: GameState
 initialGameState = GameState { gsRunning = True
-                             , gsEntities = makeEntities (Entity player)
+                             , gsEntities = makeEntities (eWrap player)
                              , gsGenState = initialGenState
                              , gsViewPort = Box (V3 0 0 0) (V2 16 9)
                              }

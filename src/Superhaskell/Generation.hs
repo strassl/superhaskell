@@ -42,7 +42,7 @@ generate _vp@(Box (V3 l t _) (V2 w h)) lastY _gs@GenState{genBound = bound}
   | bound >= (l+w+genAhead) = return []
   | otherwise = do
     let parts = partition bound (l+w+genAhead)
-    mapM (\p -> Entity <$> generatePlatform (lastY-h/4, lastY+h/8) p) parts
+    mapM (\p -> eWrap <$> generatePlatform (lastY-h/4, lastY+h/8) p) parts
 
 partition :: Float -> Float -> [(Float, Float)]
 partition l r = zip parts (tail' parts)
