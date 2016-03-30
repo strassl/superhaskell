@@ -10,27 +10,32 @@ module Superhaskell.Data.Entities (
 
 import           Control.DeepSeq
 import           GHC.Generics
+import           Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as M
 
-data EntitiesC a = EntitiesC { esPlayer :: a
-                             , esOthers :: [a]
-                             }
+data EntitiesC a = EntitiesC Int a (HashMap Int a)
                  deriving (Show, Generic, NFData)
 
 instance Foldable EntitiesC where
-  foldr f z _es@EntitiesC{ esPlayer = player, esOthers = os} = foldr f z (player:os)
+  foldr f zero (EntitiesC _ elem0 m) = f elem0 (foldr f zero m)
 
 instance Functor EntitiesC where
-  fmap f es@EntitiesC{ esPlayer = player, esOthers = os} = es { esPlayer = f player, esOthers = fmap f os}
+  fmap f (EntitiesC nextId elem0 m) = EntitiesC nextId (f elem0) (fmap f m)
 
 instance Traversable EntitiesC where
-  traverse f _es@EntitiesC{ esPlayer = player, esOthers = os} = EntitiesC <$> f player <*> traverse f os
+  traverse f (EntitiesC nextId elem0 m) = EntitiesC nextId <$> f elem0 <*> traverse f m
 
 filterOthers :: (a -> Bool) -> EntitiesC a -> EntitiesC a
-filterOthers p es@EntitiesC{ esOthers = os} = es { esOthers = filter p os}
+filterOthers p (EntitiesC nextId elem0 m) = EntitiesC nextId elem0 (M.filter p m)
+
+insertOther :: a -> EntitiesC a -> EntitiesC a
+insertOther e (EntitiesC nextId elem0 m) = EntitiesC (nextId + 1) elem0 (M.insert nextId e m)
 
 appendOthers :: Foldable t => EntitiesC a -> t a -> EntitiesC a
-appendOthers es@EntitiesC{ esOthers = os} ts = es { esOthers = nOthers }
-  where nOthers = foldr (:) os ts
+appendOthers es ts = foldr insertOther es ts
 
 makeEntities :: a -> EntitiesC a
-makeEntities player = EntitiesC { esPlayer = player, esOthers = []}
+makeEntities player = EntitiesC 1 player M.empty
+
+esPlayer :: EntitiesC a -> a
+esPlayer (EntitiesC _ elem0 _) = elem0
