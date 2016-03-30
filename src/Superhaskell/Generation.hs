@@ -27,7 +27,7 @@ updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V3 vpl vpt _) (V
   let nBound = maximum $ genBound (gsGenState gs):map ((^._x) . rightBottom . eBox) generated
   let pruned = prune vpl es
   let nGenState = (gsGenState gs) { genBound = nBound }
-  let nes = pruned `appendOthers` generated
+  let nes = appendOthers generated pruned
   return gs{ gsEntities = nes
            , gsGenState = nGenState }
 

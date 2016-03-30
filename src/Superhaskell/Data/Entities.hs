@@ -31,8 +31,8 @@ filterOthers p (EntitiesC nextId elem0 m) = EntitiesC nextId elem0 (M.filter p m
 insertOther :: a -> EntitiesC a -> EntitiesC a
 insertOther e (EntitiesC nextId elem0 m) = EntitiesC (nextId + 1) elem0 (M.insert nextId e m)
 
-appendOthers :: Foldable t => EntitiesC a -> t a -> EntitiesC a
-appendOthers es ts = foldr insertOther es ts
+appendOthers :: Foldable t => t a -> EntitiesC a -> EntitiesC a
+appendOthers ts es = foldr insertOther es ts
 
 makeEntities :: a -> EntitiesC a
 makeEntities player = EntitiesC 1 player M.empty
