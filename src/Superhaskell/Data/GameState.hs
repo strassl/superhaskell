@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE GADTs          #-}
 module Superhaskell.Data.GameState (
-    GameState(..), entitiesAt, entitiesAtInGroup, gsEntityList, toRenderList
+    GameState(..), entitiesAt, entitiesAtInGroup, toRenderList
   , GenState(..), initialGenState -- TODO remove initialGenState
   , CollisionGroup(..), collidesWith
   , IsEntity(..), Entity, Entities
@@ -72,19 +72,16 @@ data GenState = GenState { genBound :: Float
                          }
                deriving (Show, Generic, NFData)
 
-gsEntityList :: GameState -> [Entity]
-gsEntityList = toList . gsEntities
-
 -- Stores information that the generation component needs across iterations
 -- Such as up to where it already generated the world
 initialGenState :: GenState
 initialGenState = GenState { genBound = 0.0}
 
 entitiesAt :: V2 Float -> GameState -> [Entity]
-entitiesAt p gs = filter (boxContains p . eBox) (gsEntityList gs)
+entitiesAt p gs = foldr (\e es -> if boxContains p (eBox e) then e:es else es) [] (gsEntities gs)
 
 entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
 entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
 
 toRenderList :: GameState -> RenderList
-toRenderList gs = concatMap (eRender gs) (gsEntityList gs)
+toRenderList gs = concatMap (eRender gs) (gsEntities gs)
