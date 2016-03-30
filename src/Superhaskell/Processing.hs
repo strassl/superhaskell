@@ -4,7 +4,6 @@ import           Control.Applicative
 import           Control.Lens
 import qualified Data.Map.Strict              as Map
 import           Linear
-import           Superhaskell.Data.Entity
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
@@ -27,9 +26,9 @@ tickGameState :: InputState -> GameState -> GameState
 tickGameState is gs =
   if isWantQuit is
     then gs{ gsRunning = False }
-    else (moveViewPort . collideEntities . tickEntities is) gs
+    else gs --(moveViewPort . collideEntities . tickEntities is) gs
 
-
+{-
 moveViewPort :: GameState -> GameState
 moveViewPort gs@GameState{gsViewPort = (Box _ wh)} = gs{gsViewPort = Box nlt wh}
   where player = esPlayer $ gsEntities gs
@@ -90,3 +89,4 @@ applyCollision obox _ box bv@PlayerBehavior{bvFalling=falling} =
   in (box', bv{bvFalling=if edge == BottomEdge then Nothing else falling})
 applyCollision _ _ box e =
   (box, e)
+-}

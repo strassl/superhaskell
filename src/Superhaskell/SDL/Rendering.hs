@@ -5,25 +5,26 @@ module Superhaskell.SDL.Rendering (
   SDLRenderingState, initRendering, executeRenderList
 ) where
 
-import           Codec.Picture             (convertRGBA8, imageData,
-                                            imageHeight, imageWidth, readImage)
-import           Control.Arrow             ((&&&))
+import           Codec.Picture                (convertRGBA8, imageData,
+                                               imageHeight, imageWidth,
+                                               readImage)
+import           Control.Arrow                ((&&&))
 import           Control.Monad
-import           Data.ByteString           (ByteString)
-import qualified Data.HashMap.Strict       as M
-import           Data.List                 (sortBy)
-import qualified Data.Text                 as T
-import qualified Data.Vector.Storable      as VS
-import           Foreign.Marshal           (with)
-import           Foreign.Ptr               (castPtr, nullPtr)
-import           Foreign.Storable          (sizeOf)
-import           Graphics.GL               (glUniformMatrix3fv)
-import           Graphics.Rendering.OpenGL hiding (imageHeight)
-import           Linear                    (V2 (..), V3 (..))
+import           Data.ByteString              (ByteString)
+import qualified Data.HashMap.Strict          as M
+import           Data.List                    (sortBy)
+import qualified Data.Text                    as T
+import qualified Data.Vector.Storable         as VS
+import           Foreign.Marshal              (with)
+import           Foreign.Ptr                  (castPtr, nullPtr)
+import           Foreign.Storable             (sizeOf)
+import           Graphics.GL                  (glUniformMatrix3fv)
+import           Graphics.Rendering.OpenGL    hiding (imageHeight)
+import           Linear                       (V2 (..), V3 (..))
 import qualified SDL
+import           Superhaskell.Data.RenderList
 import           Superhaskell.Math
-import           Superhaskell.RenderList
-import           System.Directory          (getDirectoryContents)
+import           System.Directory             (getDirectoryContents)
 import           Text.RawString.QQ
 
 newtype M33 = M33 (V3 (V3 Float)) deriving (VS.Storable)
@@ -60,20 +61,20 @@ initRendering = do
   blend $= Enabled
   blendEquation $= FuncAdd
   blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
-  
+
   spriteProgram <- setupShaders
   spriteProgramUTransform <- get (uniformLocation spriteProgram "uTransform")
   spriteProgramUTexture <- get (uniformLocation spriteProgram "uTexture")
-  
+
   (unitSquareVao, unitSquareVbo) <- setupUnitSquare
-  
+
   textures <- loadTextures
-  
+
   clearColor $= Color4 0 0 0.25 1
   currentProgram $= Just spriteProgram
   uniform spriteProgramUTexture $= TextureUnit 0
   bindVertexArrayObject $= Just unitSquareVao
-  
+
   return $ SDLRenderingState window
                              context
                              textures

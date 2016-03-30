@@ -1,23 +1,58 @@
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE GADTs          #-}
 module Superhaskell.Data.GameState (
-    GameState(..),
-    GenState(..),
-    gsEntityList,
-    initialGameState,
-    entitiesAt,
-    entitiesAtInGroup
+    GameState(..), entitiesAt, entitiesAtInGroup, gsEntityList, toRenderList
+  , GenState(..), initialGenState -- TODO remove initialGenState
+  , CollisionGroup(..), collidesWith
+  , IsEntity(..), Entity(..), Entities
 ) where
 
-import           Data.Foldable
 import           Control.DeepSeq
+import           Data.Foldable
 import           GHC.Generics
-import           Superhaskell.Data.Entity
+import           Linear.V2                    (V2 (..))
+import           Linear.V3                    (V3 (..))
 import           Superhaskell.Data.Entities
+import           Superhaskell.Data.RenderList
 import           Superhaskell.Math
-import           Linear.V2 (V2(..))
-import           Linear.V3 (V3(..))
+
+class (Show e, NFData e) => IsEntity e where
+  eTick :: GameState -> e -> (GameState, e)
+  eRender :: GameState -> e -> RenderList
+  eCollisionGroup :: e -> CollisionGroup
+  eBox :: e -> Box
+
+  eTick = (,)
+  eRender _ _ = []
+  eCollisionGroup _ = NilCGroup
+  eBox _ = Box (V3 0 0 0) (V2 0 0)
+
+data Entity where
+  Entity :: IsEntity e => e -> Entity
+
+instance Show Entity where
+  show (Entity e) = "(Entity $ " ++ show e ++ ")"
+
+instance NFData Entity where
+  rnf (Entity e) = rnf e
+
+instance IsEntity Entity where
+  eTick gs (Entity e) = let (gs', e') = eTick gs e in (gs', Entity e')
+  eRender gs (Entity e) = eRender gs e
+  eCollisionGroup (Entity e) = eCollisionGroup e
+  eBox (Entity e) = eBox e
+
+type Entities = EntitiesC Entity
+
+data CollisionGroup = PlayerCGroup
+                    | SceneryCGroup
+                    | NilCGroup
+                    deriving (Show, Generic, NFData, Eq, Enum, Bounded, Ord)
+
+collidesWith :: CollisionGroup -> CollisionGroup -> Bool
+collidesWith PlayerCGroup SceneryCGroup = True
+collidesWith _ _ = False
 
 data GameState = GameState { gsEntities :: Entities
                            , gsRunning  :: Bool
@@ -29,13 +64,6 @@ data GameState = GameState { gsEntities :: Entities
 data GenState = GenState { genBound :: Float
                          }
                deriving (Show, Generic, NFData)
-
-initialGameState :: GameState
-initialGameState = GameState { gsRunning = True
-                             , gsEntities = makeEntities player
-                             , gsGenState = initialGenState
-                             , gsViewPort = Box (V3 0 0 0) (V2 16 9)
-                             }
 
 gsEntityList :: GameState -> [Entity]
 gsEntityList = toList . gsEntities
@@ -51,8 +79,5 @@ entitiesAt p gs = filter (boxContains p . eBox) (gsEntityList gs)
 entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
 entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
 
-player :: Entity
-player = Entity { eBox = Box (V3 4 2 0) (V2 0.5970149253731343 1)
-                , eStyle = BoxStyle "bunny1_stand"  -- TODO PlayerStyle
-                , eBehavior = PlayerBehavior { bvFalling = Just 0 }
-                , eCollisionGroup = PlayerCGroup }
+toRenderList :: GameState -> RenderList
+toRenderList gs = concatMap (eRender gs) (gsEntityList gs)

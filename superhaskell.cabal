@@ -19,16 +19,16 @@ library
   exposed-modules:     Superhaskell.Game
   other-modules:       Superhaskell.Data.GameState
                      , Superhaskell.Data.InputState
-                     , Superhaskell.Data.Entity
                      , Superhaskell.Data.Entities
+                     , Superhaskell.Data.RenderList
                      , Superhaskell.Generation
                      , Superhaskell.Processing
-                     , Superhaskell.Drawing
-                     , Superhaskell.RenderList
                      , Superhaskell.SDL.Rendering
                      , Superhaskell.SDL.Input
                      , Superhaskell.SDL.Init
                      , Superhaskell.Math
+                     , Superhaskell.Entities.Player
+                     , Superhaskell.Entities.Platform
   build-depends:       base
                      , sdl2
                      , lens
