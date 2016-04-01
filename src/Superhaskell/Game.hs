@@ -12,6 +12,7 @@ import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Entities.Player
+import           Superhaskell.Entities.Platform
 import           Superhaskell.Generation
 import           Superhaskell.Math
 import           Superhaskell.Processing
@@ -36,10 +37,13 @@ data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
 
 initialGameState :: GameState
 initialGameState = GameState { gsRunning = True
-                             , gsEntities = makeEntities (eWrap player)
+                             , gsEntities = ents
                              , gsGenState = initialGenState
                              , gsViewPort = Box (V3 0 0 0) (V2 16 9)
                              }
+  where p = eWrap player
+        initPlatform = eWrap $ platform ((boxAnchor $ eBox p) + (V3 0 4 0)) 6
+        ents = appendOthers [initPlatform] $ makeEntities p
 
 run :: IO ()
 run = do
