@@ -1,4 +1,4 @@
-module Superhaskell.Processing (tickGameState, gravity) where
+module Superhaskell.Processing (tickGameState, gravity, tps) where
 
 import           Control.Lens
 import qualified Data.Map.Strict              as Map
@@ -8,9 +8,13 @@ import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Math
 
+-- Ticks per second.
+tps :: Float
+tps = 60
+
 -- Gravity in units/tick².
 gravity :: Float
-gravity = 0.5 / 60
+gravity = 30 / tps / tps
 
 -- Advances the game state by one tick.
 tickGameState :: InputState -> GameState -> GameState

@@ -7,20 +7,21 @@ import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Random
 import           Data.Foldable
+import           GHC.Float                      (float2Double)
 import           Linear
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
-import           Superhaskell.Entities.Player
 import           Superhaskell.Entities.Platform
+import           Superhaskell.Entities.Player
 import           Superhaskell.Generation
 import           Superhaskell.Math
 import           Superhaskell.Processing
-import           Superhaskell.SDL.Init        (initSDL)
-import           Superhaskell.SDL.Input       (SDLInputState, getInputState)
-import           Superhaskell.SDL.Rendering   (SDLRenderingState,
-                                               executeRenderList)
-import qualified System.Clock                 as C
+import           Superhaskell.SDL.Init          (initSDL)
+import           Superhaskell.SDL.Input         (SDLInputState, getInputState)
+import           Superhaskell.SDL.Rendering     (SDLRenderingState,
+                                                 executeRenderList)
+import qualified System.Clock                   as C
 import           Text.Printf
 
 data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
@@ -150,11 +151,11 @@ gameStep gls iterations = do
   return gls{ glsGameState = gameState
             , glsRandomGen = g}
 
+tickTime :: Double
+tickTime = 1 / float2Double tps
+
 iterateTimesM :: Monad m => Int -> (a -> m a) -> a -> m a
 iterateTimesM iterations f init = foldrM (const f) init [1..iterations]
-
-tickTime :: Floating f => f
-tickTime = 1 / 60
 
 tickGame :: RandomGen g => InputState -> GameState -> Rand g GameState
 tickGame is gs = fmap (tickGameState is) (updateWorld gs)
