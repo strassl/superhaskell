@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 module Superhaskell.SDL.Rendering (
-  SDLRenderingState, initRendering, executeRenderList
+  SDLRenderingState, initRendering, executeRenderList, onWindowResize
 ) where
 
 import           Codec.Picture                (convertRGBA8, imageData,
@@ -43,6 +43,7 @@ data SDLRenderingState =
                     , sdlsTextures                :: Textures
                     , _sdlsSpriteProgram          :: Program
                     , sdlsSpriteProgramUTransform :: UniformLocation
+                    , sdlsSpriteProgramUCamera    :: UniformLocation
                     , _sdlsSpriteProgramUTexture  :: UniformLocation
                     , _sdlsUnitSquareVao          :: VertexArrayObject
                     , _sdlsUnitSquareVbo          :: BufferObject }
@@ -51,9 +52,12 @@ initRendering :: IO SDLRenderingState
 initRendering = do
   window <- SDL.createWindow "Superhaskell"
                              SDL.defaultWindow{ SDL.windowInitialSize = V2 1280 720
+                                              , SDL.windowResizable = True
                                               , SDL.windowOpenGL = Just SDL.defaultOpenGL{
                                                   SDL.glProfile = SDL.Core SDL.Debug 3 3 }}
   context <- SDL.glCreateContext window
+
+  SDL.swapInterval $= SDL.ImmediateUpdates
 
   debugOutput $= Enabled
   debugMessageCallback $= Just print
@@ -64,6 +68,7 @@ initRendering = do
 
   spriteProgram <- setupShaders
   spriteProgramUTransform <- get (uniformLocation spriteProgram "uTransform")
+  spriteProgramUCamera <- get (uniformLocation spriteProgram "uCamera")
   spriteProgramUTexture <- get (uniformLocation spriteProgram "uTexture")
 
   (unitSquareVao, unitSquareVbo) <- setupUnitSquare
@@ -80,9 +85,15 @@ initRendering = do
                              textures
                              spriteProgram
                              spriteProgramUTransform
+                             spriteProgramUCamera
                              spriteProgramUTexture
                              unitSquareVao
                              unitSquareVbo
+
+onWindowResize :: SDLRenderingState -> IO ()
+onWindowResize state = do
+  (V2 w h) <- get $ SDL.windowSize (sdlsWindow state)
+  viewport $= (Position 0 0, Size (fromIntegral w) (fromIntegral h))
 
 setupShaders :: IO Program
 setupShaders = do
@@ -167,22 +178,38 @@ loadTexture textures (path, name) = do
       fail $ "Could not load texture " ++ path ++ ": " ++ err
 
 executeRenderList :: SDLRenderingState -> Box -> RenderList -> IO ()
-executeRenderList sdls viewport renderList = do
+executeRenderList sdls viewport@Box{boxAnchor=V3 x y _, boxSize=V2 w h} renderList = do
+  (x, y, w, h) <- do
+    (V2 winW winH) <- get (SDL.windowSize $ sdlsWindow sdls)
+    let winAspect = fromIntegral winW / fromIntegral winH
+    let boxAspect = w / h
+    return $ if winAspect > boxAspect
+      then let h' = h * boxAspect / winAspect
+               y' = y - (h' - h) / 2
+           in (x, y', w, h')
+      else let w' = w * winAspect / boxAspect
+               x' = x - (w' - w) / 2
+           in (x', y, w', h)
+
   clear [ColorBuffer]
+  -- http://tinyurl.com/zkbr3zs
+  uniform (sdlsSpriteProgramUCamera sdls) $=
+    M33 (V3 (V3 (2/w) 0      (-2*x/w-1))
+            (V3 0     (-2/h) (2*y/h+1))
+            (V3 0     0      1))
   forM_ (sortBy compareRenderCommand renderList)
         (executeRenderCommand sdls viewport)
   SDL.glSwapWindow (sdlsWindow sdls)
 
 executeRenderCommand :: SDLRenderingState -> Box -> RenderCommand -> IO ()
-executeRenderCommand sdls (Box vpAnchor (V2 u v)) (RenderSprite tex Box{boxAnchor=bAnchor, boxSize=V2 w h}) = do
-    let (V3 x y _) = bAnchor - vpAnchor
-    -- http://tinyurl.com/guuob3r
-    uniform (sdlsSpriteProgramUTransform sdls) $=
-      M33 (V3 (V3 (2*w/u) 0        (2*x/u - 1))
-              (V3 0       (-2*h/v) (1 - 2*y/v))
-              (V3 0       0        1))
-    textureBinding Texture2D $= M.lookup tex (sdlsTextures sdls)
-    drawArrays TriangleStrip 0 4
+executeRenderCommand sdls _ (RenderSprite tex Box{boxAnchor=V3 x y _, boxSize=V2 w h}) = do
+  -- http://tinyurl.com/znrp8uq
+  uniform (sdlsSpriteProgramUTransform sdls) $=
+    M33 (V3 (V3 w 0 x)
+            (V3 0 h y)
+            (V3 0 0 1))
+  textureBinding Texture2D $= M.lookup tex (sdlsTextures sdls)
+  drawArrays TriangleStrip 0 4
 
 compareRenderCommand :: RenderCommand -> RenderCommand -> Ordering
 compareRenderCommand (RenderSprite _ Box{boxAnchor=V3 _ _ a})
@@ -199,12 +226,13 @@ boxVertexShaderSource =
     layout(location = 0) in vec2 vPos;
 
     uniform mat3 uTransform;
+    uniform mat3 uCamera;
 
     out vec2 oTexPos;
 
     void main()
     {
-      vec2 pos = vec2(uTransform * vec3(vPos, 1));
+      vec2 pos = vec2(uCamera * (uTransform * vec3(vPos, 1)));
       gl_Position = vec4(pos, 0, 1);
       oTexPos = vPos;
     }

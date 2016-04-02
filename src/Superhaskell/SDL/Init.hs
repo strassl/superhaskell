@@ -8,5 +8,5 @@ initSDL :: IO (SDLRenderingState, SDLInputState)
 initSDL = do
   SDL.initializeAll
   rs <- initRendering
-  is <- initInput
+  is <- initInput rs
   return (rs, is)

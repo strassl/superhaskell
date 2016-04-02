@@ -2,19 +2,22 @@ module Superhaskell.SDL.Input (
   SDLInputState, initInput, getInputState
 ) where
 
+import           Control.Monad
 import           Data.Int
 import qualified Data.Vector                  as V
 import           Linear
 import           SDL
 import           Superhaskell.Data.InputState
 import           Superhaskell.Math
+import           Superhaskell.SDL.Rendering
 
 data SDLInputState =
-  SDLInputState { sdlsJoystick :: Maybe Joystick
+  SDLInputState { sdlsJoystick       :: Maybe Joystick
+                , sdlsRenderingState :: SDLRenderingState
                 }
 
-initInput :: IO SDLInputState
-initInput = do
+initInput :: SDLRenderingState -> IO SDLInputState
+initInput rs = do
   joysticks <- availableJoysticks
   joystick <- if V.null joysticks
     then do
@@ -24,23 +27,29 @@ initInput = do
       print (V.head joysticks)
       Just <$> openJoystick (V.head joysticks)
 
-  return $ SDLInputState joystick
+  return $ SDLInputState joystick rs
 
 -- | Updates the current input state.
 getInputState :: SDLInputState -> InputState -> IO InputState
 getInputState state is = do
   events <- pollEvents
+  wantQuit <- foldM (handleEvent state) False events
+
   keyboardState <- getKeyboardState
   joystickState <- getJoystickButtonsState (sdlsJoystick state)
   let kDir = keyboardDirection keyboardState
   jDir <- getJoystickDirection (sdlsJoystick state)
-  return is{ isWantQuit = isWantQuit is || any isQuit events
+  return is{ isWantQuit = isWantQuit is || wantQuit
            , isDirection = if kDir == V2 0 0 then jDir else kDir
            , isJump = keyboardState ScancodeSpace || joystickState 0 }
 
-isQuit :: Event -> Bool
-isQuit (Event _ (WindowClosedEvent _)) = True
-isQuit _ = False
+handleEvent :: SDLInputState -> Bool -> Event -> IO Bool
+handleEvent _ _ (Event _ (WindowClosedEvent _)) =
+  return True
+handleEvent is wantQuit (Event _ (WindowResizedEvent _)) =
+  onWindowResize (sdlsRenderingState is) >> return wantQuit
+handleEvent _ wantQuit _ =
+  return wantQuit
 
 getJoystickButtonsState :: Maybe Joystick -> IO (Int -> Bool)
 getJoystickButtonsState Nothing = return $ const False
