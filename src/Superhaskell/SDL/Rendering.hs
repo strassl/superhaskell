@@ -48,16 +48,16 @@ data SDLRenderingState =
                     , _sdlsUnitSquareVao          :: VertexArrayObject
                     , _sdlsUnitSquareVbo          :: BufferObject }
 
-initRendering :: IO SDLRenderingState
-initRendering = do
+initRendering :: Bool -> Bool -> IO SDLRenderingState
+initRendering debug bench = do
   window <- SDL.createWindow "Superhaskell"
                              SDL.defaultWindow{ SDL.windowInitialSize = V2 1280 720
                                               , SDL.windowResizable = True
                                               , SDL.windowOpenGL = Just SDL.defaultOpenGL{
-                                                  SDL.glProfile = SDL.Core SDL.Debug 3 3 }}
+                                                  SDL.glProfile = SDL.Core (if debug then SDL.Debug else SDL.Normal) 3 3 }}
   context <- SDL.glCreateContext window
 
-  SDL.swapInterval $= SDL.ImmediateUpdates
+  SDL.swapInterval $= if bench then SDL.ImmediateUpdates else SDL.SynchronizedUpdates
 
   debugOutput $= Enabled
   debugMessageCallback $= Just print

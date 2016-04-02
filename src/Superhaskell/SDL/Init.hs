@@ -4,9 +4,9 @@ import qualified SDL
 import           Superhaskell.SDL.Input
 import           Superhaskell.SDL.Rendering
 
-initSDL :: IO (SDLRenderingState, SDLInputState)
-initSDL = do
+initSDL :: Bool -> Bool -> IO (SDLRenderingState, SDLInputState)
+initSDL debug bench = do
   SDL.initializeAll
-  rs <- initRendering
+  rs <- initRendering debug bench
   is <- initInput rs
   return (rs, is)

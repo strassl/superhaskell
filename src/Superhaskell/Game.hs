@@ -45,12 +45,12 @@ initialGameState = GameState { gsRunning = True
         initPlatform = eWrap $ platform ((boxAnchor $ eBox p) + (V3 0 4 0)) 6
         ents = appendOthers [initPlatform] $ makeEntities p
 
-run :: IO ()
-run = do
+run :: Bool -> Bool -> IO ()
+run debug bench = do
   putStrLn "SUPERHASKELL"
   putStrLn "============"
   -- Init SDL
-  (sdlRState, sdlIState) <- initSDL
+  (sdlRState, sdlIState) <- initSDL debug bench
   -- Init shared data boxes
   inputStateBox <- atomically $ newTVar defaultInputState
   gameStateBox <- atomically $ newTVar initialGameState
