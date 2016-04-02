@@ -53,7 +53,7 @@ collideEntity others e = filter (boxOverlaps (eBox e) . eBox . snd)
 
 -- | Applys all collitions to a given subject with all given objects.
 applyCollisions :: GameState -> Id -> Entity -> [(Id, Entity)] -> (GameState, Entity)
-applyCollisions gs eid e others = foldr (applyCollision eid) (gs, e) others
+applyCollisions gs eid e = foldr (applyCollision eid) (gs, e)
 
 -- | Applys the collision and is supposed to return an updated version of the
 -- subject entity. The second entity is the object entity.

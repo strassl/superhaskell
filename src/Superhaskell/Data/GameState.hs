@@ -30,7 +30,7 @@ class (Show e, NFData e) => IsEntity e where
   eCollide _ _ gs _ e = (gs, e)
   eCollisionGroup _ = NilCGroup
   eBox _ = Box (V3 0 0 0) (V2 0 0)
-  eWrap e = Entity e
+  eWrap = Entity
 
 data Entity where
   Entity :: IsEntity e => e -> Entity

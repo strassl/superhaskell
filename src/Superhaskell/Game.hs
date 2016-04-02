@@ -42,7 +42,7 @@ initialGameState = GameState { gsRunning = True
                              , gsViewPort = Box (V3 0 0 0) (V2 16 9)
                              }
   where p = eWrap player
-        initPlatform = eWrap $ platform ((boxAnchor $ eBox p) + (V3 0 4 0)) 6
+        initPlatform = eWrap $ platform (boxAnchor (eBox p) + V3 0 4 0) 6
         ents = appendOthers [initPlatform] $ makeEntities p
 
 run :: Bool -> Bool -> IO ()
