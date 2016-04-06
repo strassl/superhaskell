@@ -20,8 +20,9 @@ module Superhaskell.Data.RenderList (
 import           Data.Text         (Text)
 import           Superhaskell.Math
 
-data RenderCommand = RenderSprite Text -- ^ Name of the texture
-                                  Box  -- ^ Position
+data RenderCommand = RenderSprite Text   -- ^ Name of the texture
+                                  Box    -- ^ Position
+                                  Float  -- ^ Z
                    deriving (Show)
 
 type RenderList = [RenderCommand]

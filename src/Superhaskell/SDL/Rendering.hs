@@ -178,7 +178,7 @@ loadTexture textures (path, name) = do
       fail $ "Could not load texture " ++ path ++ ": " ++ err
 
 executeRenderList :: SDLRenderingState -> Box -> RenderList -> IO ()
-executeRenderList sdls viewport@Box{boxAnchor=V3 x y _, boxSize=V2 w h} renderList = do
+executeRenderList sdls viewport@Box{boxAnchor=V2 x y, boxSize=V2 w h} renderList = do
   (x, y, w, h) <- do
     (V2 winW winH) <- get (SDL.windowSize $ sdlsWindow sdls)
     let winAspect = fromIntegral winW / fromIntegral winH
@@ -202,7 +202,7 @@ executeRenderList sdls viewport@Box{boxAnchor=V3 x y _, boxSize=V2 w h} renderLi
   SDL.glSwapWindow (sdlsWindow sdls)
 
 executeRenderCommand :: SDLRenderingState -> Box -> RenderCommand -> IO ()
-executeRenderCommand sdls _ (RenderSprite tex Box{boxAnchor=V3 x y _, boxSize=V2 w h}) = do
+executeRenderCommand sdls _ (RenderSprite tex Box{boxAnchor=V2 x y, boxSize=V2 w h} _) = do
   -- http://tinyurl.com/znrp8uq
   uniform (sdlsSpriteProgramUTransform sdls) $=
     M33 (V3 (V3 w 0 x)
@@ -212,8 +212,7 @@ executeRenderCommand sdls _ (RenderSprite tex Box{boxAnchor=V3 x y _, boxSize=V2
   drawArrays TriangleStrip 0 4
 
 compareRenderCommand :: RenderCommand -> RenderCommand -> Ordering
-compareRenderCommand (RenderSprite _ Box{boxAnchor=V3 _ _ a})
-                     (RenderSprite _ Box{boxAnchor=V3 _ _ b}) = compare a b
+compareRenderCommand (RenderSprite _ _ a) (RenderSprite _ _ b) = compare a b
 
 vectorBytes :: (Integral i, VS.Storable a) => VS.Vector a -> i
 vectorBytes v = fromIntegral $ VS.length v * sizeOf (VS.unsafeHead v)

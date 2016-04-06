@@ -42,9 +42,9 @@ data Player = Player { pos     :: V2 Float
 instance IsEntity Player where
   eCollisionGroup _ = PlayerCGroup
 
-  eBox Player{pos=V2 x y} = Box (V3 x y 0) (V2 0.5970149253731343 1)
+  eBox p = Box (pos p) (V2 0.5970149253731343 1)
 
-  eRender _ _ p = [RenderSprite "bunny1_stand" (eBox p)]
+  eRender _ _ p = [RenderSprite "bunny1_stand" (eBox p) 0]
 
   eTick is gs _ p@Player{pos=pos, falling=falling, speed=speed} =
     let (V2 inputX _) = isDirection is
@@ -70,7 +70,7 @@ instance IsEntity Player where
 
 collideWithScenery :: IsEntity o => o -> Player -> Player
 collideWithScenery other p =
-  let (Box{boxAnchor=V3 x' y' _}, edge) = pushOut (eBox other) (eBox p)
+  let (Box{boxAnchor=V2 x' y'}, edge) = pushOut (eBox other) (eBox p)
   in p{pos=V2 x' y', falling=if edge == BottomEdge then Nothing else falling p}
 
 player :: Player

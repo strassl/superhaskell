@@ -11,7 +11,6 @@ module Superhaskell.Data.GameState (
 import           Control.DeepSeq
 import           GHC.Generics
 import           Linear.V2                    (V2 (..))
-import           Linear.V3                    (V3 (..))
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.InputState
 import           Superhaskell.Data.RenderList
@@ -29,7 +28,7 @@ class (Show e, NFData e) => IsEntity e where
   eRender _ _ _ = []
   eCollide _ _ gs _ e = (gs, e)
   eCollisionGroup _ = NilCGroup
-  eBox _ = Box (V3 0 0 0) (V2 0 0)
+  eBox _ = Box (V2 0 0) (V2 0 0)
   eWrap = Entity
 
 data Entity where

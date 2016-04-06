@@ -23,33 +23,28 @@ eps = 1 / 1024
 data Edge = LeftEdge | TopEdge | RightEdge | BottomEdge
           deriving (Show, Read, Eq, Ord, Enum, Bounded, Generic, NFData)
 
-data Box = Box { boxAnchor :: V3 Float
+data Box = Box { boxAnchor :: V2 Float
                , boxSize   :: V2 Float }
          deriving (Show, Generic, NFData)
 
 leftTop :: Box -> V2 Float
-leftTop _b@Box{boxAnchor = anchor} = withoutZ anchor
+leftTop (Box xy _) = xy
 
 leftBottom :: Box -> V2 Float
-leftBottom _b@Box{boxAnchor = anchor, boxSize = size} = over _y addHeight (withoutZ anchor)
-  where addHeight = (+ (size ^._y))
+leftBottom (Box (V2 x y) (V2 _ h)) = V2 x (y + h)
 
 rightBottom :: Box -> V2 Float
-rightBottom _b@Box{boxAnchor = anchor, boxSize = size} = withoutZ anchor + size
+rightBottom (Box xy wh) = xy ^+^ wh
 
 rightTop :: Box -> V2 Float
-rightTop _b@Box{boxAnchor = anchor, boxSize = size} = over _x addWidth (withoutZ anchor)
-  where addWidth = (+ (size ^._x))
-
-withoutZ :: V3 t -> V2 t
-withoutZ = (^._xy)
+rightTop (Box (V2 x y) (V2 w _)) = V2 (x + w) y
 
 moveBox :: V2 Float -> Box -> Box
-moveBox (V2 x y) box@Box{boxAnchor=anchor} =
-  box{boxAnchor = anchor ^+^ V3 x y 0}
+moveBox offset box@Box{boxAnchor=anchor} =
+  box{boxAnchor = anchor ^+^ offset}
 
 boxContains :: V2 Float -> Box -> Bool
-boxContains (V2 px py) Box{boxAnchor=(V3 bx by _), boxSize=(V2 sx sy)} =
+boxContains (V2 px py) (Box (V2 bx by) (V2 sx sy)) =
      bx < px && px < bx + sx
   && by < py && py < by + sy
 
@@ -64,8 +59,7 @@ boxOverlaps a b = anyCorner a b || anyCorner b a
 -- distance. If a and b do not overlap... it does strange things, I guess.
 -- It returns the edge of the *second* box that has the contact now.
 pushOut :: Box -> Box -> (Box, Edge)
-pushOut Box{boxAnchor=V3 ax ay _, boxSize=V2 aw ah}
-        b@Box{boxAnchor=V3 bx by _, boxSize=V2 bw bh} =
+pushOut (Box (V2 ax ay) (V2 aw ah)) b@(Box (V2 bx by) (V2 bw bh)) =
   let dists = [ (V2 (ax - (bx + bw)) 0,                RightEdge)
               , (V2 (ax + aw - bx)   0,                LeftEdge)
               , (V2 0                (ay - (by + bh)), BottomEdge)
