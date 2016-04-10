@@ -9,6 +9,7 @@ module Superhaskell.Data.GameState (
 ) where
 
 import           Control.DeepSeq
+import           Data.Fixed
 import           GHC.Generics
 import           Linear.V2                    (V2 (..))
 import           Superhaskell.Data.Entities
@@ -18,7 +19,7 @@ import           Superhaskell.Math
 
 class (Show e, NFData e) => IsEntity e where
   eTick :: InputState -> GameState -> Id -> e -> (GameState, e)
-  eRender :: GameState -> Id -> e -> RenderList
+  eRender :: GameState -> Id -> e -> KeyFrames
   eCollide :: IsEntity o => Id -> o -> GameState -> Id -> e -> (GameState, e)
   eCollisionGroup :: e -> CollisionGroup
   eBox :: e -> Box
@@ -82,5 +83,13 @@ entitiesAt p gs = foldr (\e es -> if boxContains p (eBox e) then e:es else es) [
 entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
 entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
 
-toRenderList :: GameState -> RenderList
-toRenderList gs = concat $ mapWithId (eRender gs) (gsEntities gs)
+toRenderList :: Float -> GameState -> RenderList
+toRenderList time gs = concatMap (applyAnimation time) $ mapWithId (eRender gs) (gsEntities gs)
+
+applyAnimation :: Float -> KeyFrames -> RenderList
+applyAnimation time kfs = fst . head $ dropWhile (\(_, end) -> end < offset) framesWithEnds
+    where totalDuration = sum $ map kfDuration kfs
+          offset = time `mod'` totalDuration
+          startTime = time - offset
+          framesWithEnds = zip (map kfRenderList kfs)
+                               (tail $ scanl (+) 0 $ map kfDuration kfs) -- Drop the first (0)

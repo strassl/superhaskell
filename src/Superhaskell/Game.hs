@@ -7,7 +7,6 @@ import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Random
 import           Data.Foldable
-import           GHC.Float                      (float2Double)
 import           Linear
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
@@ -69,7 +68,7 @@ run debug bench = do
                                              sdlIState)
   putStrLn "Bye!"
 
-runRenderLoop :: Double -> Int -> RenderLoopState -> IO ()
+runRenderLoop :: Float -> Int -> RenderLoopState -> IO ()
 runRenderLoop fpsStartTime fpsCount rls = do
   now <- getTimeSeconds
   let timeDelta = now - fpsStartTime
@@ -79,24 +78,24 @@ runRenderLoop fpsStartTime fpsCount rls = do
   else
     return (fpsStartTime, fpsCount + 1)
 
-  (rls', keepGoing) <- renderStep rls
+  (rls', keepGoing) <- renderStep rls now
   when keepGoing (runRenderLoop fpsStartTime' fpsCount' rls')
 
-renderStep :: RenderLoopState -> IO (RenderLoopState, Bool)
-renderStep rls = do
+renderStep :: RenderLoopState -> Float -> IO (RenderLoopState, Bool)
+renderStep rls time = do
   inputState <- getInputState (rlsSdlIState rls) (rlsInputState rls)
   inputState `deepseq` atomicWrite (rlsInputStateBox rls) inputState
   gameState <- atomicRead (rlsGameStateBox rls)
-  executeRenderList (rlsSdlRState rls) (gsViewPort gameState) (toRenderList gameState)
+  executeRenderList (rlsSdlRState rls) (gsViewPort gameState) (toRenderList time gameState)
   return (rls{rlsInputState = inputState}, gsRunning gameState)
 
-printFPS :: Int -> Double -> IO ()
+printFPS :: Int -> Float -> IO ()
 printFPS frames timeDelta = do
   let fps = fromIntegral frames / timeDelta
   let mspf = timeDelta / fromIntegral frames * 1000
   printf "Frame time: %.0f ms    %.1f FPS\n" mspf fps
 
-runGameLoop :: Double -> Double -> Double -> Int -> Int -> GameLoopState -> IO ()
+runGameLoop :: Float -> Float -> Float -> Int -> Int -> GameLoopState -> IO ()
 runGameLoop prevTime timeLeft measureStartTime totalSleepUs ticks gls = do
   now <- getTimeSeconds
 
@@ -133,7 +132,7 @@ runGameLoop prevTime timeLeft measureStartTime totalSleepUs ticks gls = do
                                                      ticks'
                                                      gls'
 
-printTPS :: Double -> Int -> Int -> IO ()
+printTPS :: Float -> Int -> Int -> IO ()
 printTPS deltaTime totalSleepUs ticks =
   let sleepTime = fromIntegral totalSleepUs / 1000000
       tickTime = (deltaTime - sleepTime) / fromIntegral ticks
@@ -151,8 +150,8 @@ gameStep gls iterations = do
   return gls{ glsGameState = gameState
             , glsRandomGen = g}
 
-tickTime :: Double
-tickTime = 1 / float2Double tps
+tickTime :: Float
+tickTime = 1 / tps
 
 iterateTimesM :: Monad m => Int -> (a -> m a) -> a -> m a
 iterateTimesM iterations f init = foldrM (const f) init [1..iterations]

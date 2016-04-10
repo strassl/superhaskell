@@ -14,7 +14,7 @@ data Platform = Platform Box deriving (Show, Generic, NFData)
 
 instance IsEntity Platform where
   eBox (Platform box) = box
-  eRender _ _ (Platform box) = [RenderSprite "ground_stone" box 10]
+  eRender _ _ (Platform box) = [KeyFrame [RenderSprite "ground_stone" box 10] 1]
   eCollisionGroup _ = SceneryCGroup
 
 platform :: V2 Float -> Float -> Platform
