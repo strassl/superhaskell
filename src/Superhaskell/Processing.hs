@@ -1,6 +1,8 @@
 module Superhaskell.Processing (tickGameState, gravity, tps) where
 
 import qualified Data.Map.Strict              as Map
+import           Control.Lens
+import           Linear.V2
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
@@ -24,9 +26,10 @@ tickGameState is gs =
 moveViewPort :: GameState -> GameState
 moveViewPort gs@GameState{gsViewPort = vp@(Box _ wh)} = gs{gsViewPort = withCenter newCamCenter vp}
   where playerCenter = center $ eBox $ esPlayer $ gsEntities gs
-        playerPosWeight = 0.1 -- Decrease to make it more rubber-bandy, never set to 0
+        targetCenter = over _x (\v -> v + ((wh/3) ^._x)) playerCenter
+        targetWeight = 0.1 -- Decrease to make it more rubber-bandy, never set to 0
         oldCamCenter = center vp
-        newCamCenter = (oldCamCenter * (1-playerPosWeight)) + (playerCenter * playerPosWeight)
+        newCamCenter = (oldCamCenter * (1-targetWeight)) + (targetCenter * targetWeight)
 
 tickEntities :: InputState -> GameState -> GameState
 tickEntities is gs = foldrWithId (tickEntity is) gs (gsEntities gs)
