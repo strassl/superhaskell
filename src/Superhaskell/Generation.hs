@@ -51,9 +51,9 @@ partition l r = zip parts (tail' parts)
 
 generatePlatform :: RandomGen g => (Float, Float) -> (Float, Float) -> Rand g Platform
 generatePlatform (b, t) (l, r)= do
-    pos_x <- getRandomR (l, r-3)
+    pos_x <- getRandomR (l+borderWidth, r-platformWidth-borderWidth)
     pos_y <- getRandomR (b, t)
-    let p = platform (V2 pos_x pos_y) 3
+    let p = platform (V2 pos_x pos_y) platformWidth
     return p
 
 isLeftOfViewport :: IsEntity e => Float -> e -> Bool
@@ -61,7 +61,14 @@ isLeftOfViewport leftBound e = boxRight <= leftBound
   where boxRight = rightBottom (eBox e) ^._x
 
 partitionWidth :: Float
-partitionWidth = 4
+partitionWidth = 6
+
+-- How much of the partition should be kept free of platforms
+borderWidth :: Float
+borderWidth = 2
+
+platformWidth :: Float
+platformWidth = 3
 
 genAhead :: Float
 genAhead = 8
