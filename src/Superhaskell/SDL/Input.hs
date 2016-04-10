@@ -41,7 +41,10 @@ getInputState state is = do
   jDir <- getJoystickDirection (sdlsJoystick state)
   return is{ isWantQuit = isWantQuit is || wantQuit
            , isDirection = if kDir == V2 0 0 then jDir else kDir
-           , isJump = keyboardState ScancodeSpace || joystickState 0 }
+           , isJump = keyboardState ScancodeSpace || joystickState 0
+           , isDrop = keyboardState ScancodeS || joystickState 2
+           , isBoost = keyboardState ScancodeLShift || joystickState 1
+           }
 
 handleEvent :: SDLInputState -> Bool -> Event -> IO Bool
 handleEvent _ _ (Event _ (WindowClosedEvent _)) =

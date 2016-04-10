@@ -15,9 +15,13 @@ data InputState = InputState { -- | True if the user wants to quit the game.
                                -- Is of length 0 to 1.
                              , isDirection :: V2 Float
                                -- | True if the user presses jump.
-                             , isJump :: Bool
+                             , isJump      :: Bool
+                               -- | Ture if the user presses drop.
+                             , isDrop      :: Bool
+                               -- | True if the user presses boost.
+                             , isBoost     :: Bool
                              }
                 deriving (Show, Generic, NFData)
 
 defaultInputState :: InputState
-defaultInputState = InputState False (V2 0 0) False
+defaultInputState = InputState False (V2 0 0) False False False

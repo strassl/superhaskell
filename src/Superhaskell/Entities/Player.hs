@@ -6,10 +6,10 @@ module Superhaskell.Entities.Player (
   playerStartSpeed
 ) where
 
-import           Control.Applicative
 import           Control.DeepSeq
 import           GHC.Generics
 import           Linear
+import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Data.RenderList
@@ -28,16 +28,37 @@ playerJumpTime = 0.5 * tps
 playerAcceleration :: Float
 playerAcceleration = 0.1 / tps / tps
 
+-- Deacceleration of boosts in units/tick².
+playerDeacceleration :: Float
+playerDeacceleration = 15 / tps / tps
+
 -- Start speed in units/tick.
 playerStartSpeed :: Float
 playerStartSpeed = 1 / tps
 
+-- Drop speed in units/tick.
+playerDropSpeed :: Float
+playerDropSpeed = 20 / tps
+
+-- Boost speed of the player in units/tick.
+playerBoostSpeed :: Float
+playerBoostSpeed = 10 / tps
+
 -- Not exported -> no need to scope :)
-data Player = Player { pos     :: V2 Float
-                     , falling :: Maybe Float
-                     , speed   :: Float
+data Player = Player { pos        :: V2 Float
+                     , speed      :: Float
+                     , extraSpeed :: Float
+                     , state      :: PlayerState
                      }
             deriving (Show, Generic, NFData)
+
+data PlayerState = InAir PlayerInAir | Dropping | OnGround
+                 deriving (Show, Generic, NFData)
+
+data PlayerInAir = PlayerInAir { fallingTicks :: Float
+                               , canBoost     :: Bool
+                               }
+                 deriving (Show, Generic, NFData)
 
 instance IsEntity Player where
   eCollisionGroup _ = PlayerCGroup
@@ -48,36 +69,77 @@ instance IsEntity Player where
     where kf1 = KeyFrame [RenderSprite "bunny1_walk1" (eBox p) 0] 0.2
           kf2 = KeyFrame [RenderSprite "bunny1_walk2" (eBox p) 0] 0.2
 
-  eTick is gs _ p@Player{pos=pos, falling=falling, speed=speed} =
-    let (V2 inputX _) = isDirection is
-        box = eBox p
-
-        (gravityFalling, gravityDeltaPos) = applyGravity falling
-        moveDeltaPos = V2 (inputX * playerManualSpeed) 0
-        baseDeltaPos = V2 speed 0
-        pos' = pos ^+^ gravityDeltaPos ^+^ moveDeltaPos ^+^ baseDeltaPos
-
-        offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 (2 * eps)) SceneryCGroup gs)
-                && null (entitiesAtInGroup (rightBottom box + V2 0 (2 * eps)) SceneryCGroup gs)
-        jump = if isJump is then Just (-playerJumpTime) else Nothing
-        falling' = gravityFalling <|> jump <|> if offEdge then Just 1 else Nothing
-
-        speed' = speed + playerAcceleration
-    in (gs, p{pos=pos', falling=falling', speed=speed'})
+  eTick is gs pid p =
+    let (gs', p') = case state p of
+                      InAir _ -> tickInAir is gs pid p
+                      Dropping -> tickDropping is gs pid p
+                      OnGround -> tickOnGround is gs pid p
+        speed' = speed p' + playerAcceleration
+        extraSpeed' = max 0 (extraSpeed p' - playerDeacceleration)
+    in (gs', p'{speed=speed', extraSpeed=extraSpeed'})
 
   eCollide _ other gs _ p =
     case eCollisionGroup other of
       SceneryCGroup -> (gs, collideWithScenery other p)
       _ -> (gs, p)
 
+tickInAir :: InputState -> GameState -> Id -> Player -> (GameState, Player)
+tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
+  let PlayerInAir{fallingTicks=fallingTicks, canBoost=canBoost} = state
+      (V2 inputX _) = isDirection is
+
+      gravityDeltaPos = V2 0 (gravity * fallingTicks)
+      moveDeltaPos = V2 (max 0 (inputX * playerManualSpeed)) 0
+      baseDeltaPos = V2 (speed + extraSpeed) 0
+      pos' = pos ^+^ gravityDeltaPos ^+^ moveDeltaPos ^+^ baseDeltaPos
+
+      doBoost = canBoost && isBoost is
+      fallingTicks' = if fallingTicks < 0 && not (isJump is)
+                        then 0
+                        else fallingTicks + 1
+      state'
+        | isDrop is = Dropping
+        | doBoost   = InAir state{ fallingTicks=fallingTicks'
+                                 , canBoost=False
+                                 }
+        | otherwise = InAir state{fallingTicks=fallingTicks'}
+      extraSpeed' = if doBoost
+                      then extraSpeed + playerBoostSpeed
+                      else extraSpeed
+  in (gs, p{pos=pos', state=state', extraSpeed=extraSpeed'})
+tickInAir _ _ _ _ =
+  error "Player is not InAir"
+
+tickDropping :: InputState -> GameState -> Id -> Player -> (GameState, Player)
+tickDropping _ gs _ p@Player{pos=pos, state=Dropping} =
+  (gs, p{pos=pos + V2 0 playerDropSpeed})
+tickDropping _ _ _ _ =
+  error "Player not Dropping"
+
+tickOnGround :: InputState -> GameState -> Id -> Player -> (GameState, Player)
+tickOnGround is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=OnGround} =
+  let (V2 inputX _) = isDirection is
+      box = eBox p
+
+      moveDeltaPos = V2 (max 0 (inputX * playerManualSpeed)) 0
+      baseDeltaPos = V2 (speed + extraSpeed) 0
+      pos' = pos ^+^ moveDeltaPos ^+^ baseDeltaPos
+
+      offEdge =  null (entitiesAtInGroup (leftBottom box + V2 0 (2 * eps)) SceneryCGroup gs)
+              && null (entitiesAtInGroup (rightBottom box + V2 0 (2 * eps)) SceneryCGroup gs)
+
+      state'
+        | isJump is = InAir (PlayerInAir (-playerJumpTime) True)
+        | offEdge   = InAir (PlayerInAir 1 True)
+        | otherwise = OnGround
+  in (gs, p{pos=pos', state=state'})
+tickOnGround _ _ _ _ =
+  error "Player not OnGround"
+
 collideWithScenery :: IsEntity o => o -> Player -> Player
 collideWithScenery other p =
   let (Box{boxAnchor=V2 x' y'}, edge) = pushOut (eBox other) (eBox p)
-  in p{pos=V2 x' y', falling=if edge == BottomEdge then Nothing else falling p}
+  in p{pos=V2 x' y', state=if edge == BottomEdge then OnGround else state p}
 
 player :: Player
-player = Player (V2 4 2) (Just 0) playerStartSpeed
-
-applyGravity :: Maybe Float -> (Maybe Float, V2 Float)
-applyGravity (Just time) = (Just (time + 1), V2 0 (gravity * time))
-applyGravity Nothing = (Nothing, V2 0 0)
+player = Player (V2 4 2) playerStartSpeed 0 Dropping
