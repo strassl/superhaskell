@@ -4,13 +4,12 @@ module Superhaskell.Math (
     eps
   , Edge(..)
   , Box(..)
-  , leftTop, leftBottom, rightBottom, rightTop
-  , moveBox, pushOut
+  , leftTop, leftBottom, rightBottom, rightTop, center
+  , withCenter, moveBox, pushOut
   , boxContains, boxOverlaps
 ) where
 
 import           Control.DeepSeq
-import           Control.Lens
 import           Data.List
 import           Data.Ord
 import           GHC.Generics
@@ -38,6 +37,12 @@ rightBottom (Box xy wh) = xy ^+^ wh
 
 rightTop :: Box -> V2 Float
 rightTop (Box (V2 x y) (V2 w _)) = V2 (x + w) y
+
+center :: Box -> V2 Float
+center (Box anchor size) = anchor + size / 2
+
+withCenter :: V2 Float -> Box -> Box
+withCenter center (Box _ size) = Box (center - size/2) size
 
 moveBox :: V2 Float -> Box -> Box
 moveBox offset box@Box{boxAnchor=anchor} =
