@@ -45,9 +45,8 @@ instance IsEntity Player where
   eBox p = Box (pos p) (V2 0.5970149253731343 1)
 
   eRender _ _ p = [kf1, kf2]
-    where kf1 = KeyFrame [RenderSprite "bunny1_walk1" (eBox p) 0] duration
-          kf2 = KeyFrame [RenderSprite "bunny1_walk2" (eBox p) 0] duration
-          duration = 10 / speed p
+    where kf1 = KeyFrame [RenderSprite "bunny1_walk1" (eBox p) 0] 0.2
+          kf2 = KeyFrame [RenderSprite "bunny1_walk2" (eBox p) 0] 0.2
 
   eTick is gs _ p@Player{pos=pos, falling=falling, speed=speed} =
     let (V2 inputX _) = isDirection is

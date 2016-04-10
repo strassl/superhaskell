@@ -90,6 +90,5 @@ applyAnimation :: Float -> KeyFrames -> RenderList
 applyAnimation time kfs = fst . head $ dropWhile (\(_, end) -> end < offset) framesWithEnds
     where totalDuration = sum $ map kfDuration kfs
           offset = time `mod'` totalDuration
-          startTime = time - offset
           framesWithEnds = zip (map kfRenderList kfs)
                                (tail $ scanl (+) 0 $ map kfDuration kfs) -- Drop the first (0)
