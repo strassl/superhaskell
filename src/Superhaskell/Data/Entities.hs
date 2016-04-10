@@ -56,4 +56,7 @@ esPlayer (EntitiesC _ elem0 _) = elem0
 
 replaceId :: Id -> a -> EntitiesC a -> EntitiesC a
 replaceId (Id 0) e (EntitiesC nextId _ m) = EntitiesC nextId e m
-replaceId (Id i) e (EntitiesC nextId elem0 m) = EntitiesC nextId elem0 (M.insert i e m)
+replaceId (Id i) e (EntitiesC nextId elem0 m) =
+  if i `M.member` m
+    then EntitiesC nextId elem0 (M.insert i e m)
+    else EntitiesC nextId elem0 m
