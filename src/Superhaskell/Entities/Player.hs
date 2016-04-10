@@ -94,8 +94,8 @@ tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=In
       pos' = pos ^+^ gravityDeltaPos ^+^ moveDeltaPos ^+^ baseDeltaPos
 
       doBoost = canBoost && isBoost is
-      fallingTicks' = if fallingTicks < 0 && not (isJump is)
-                        then 0
+      fallingTicks' = if fallingTicks < -7 && not (isJump is)
+                        then -7
                         else fallingTicks + 1
       state'
         | isDrop is = Dropping
