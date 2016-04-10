@@ -10,7 +10,7 @@ import           Superhaskell.Math
 
 -- Ticks per second.
 tps :: Float
-tps = 60
+tps = 144
 
 -- Gravity in units/tick².
 gravity :: Float
