@@ -1,4 +1,4 @@
--- Coordinate System:
+ -- Coordinate System:
 --          -y
 --          ^
 --          |
@@ -26,7 +26,7 @@ import           Superhaskell.Math
 type KeyFrames = [KeyFrame]
 
 data KeyFrame = KeyFrame { kfRenderList :: RenderList
-                         , kfDuration :: Float -- in s
+                         , kfDuration   :: Float -- in s
                          }
 
 data RenderCommand = RenderSprite Text      -- ^ Name of the texture

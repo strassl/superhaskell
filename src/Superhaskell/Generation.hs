@@ -17,9 +17,42 @@ import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Entities.Platform
 import           Superhaskell.Math
+import Superhaskell.Processing
+import Superhaskell.Entities.Cloud
+
+newtype T4 a b c d = T4 (a, b, c, d)
+instance (Random a, Random b, Random c, Random d) => Random (T4 a b c d) where
+  randomR (T4 (a, b, c, d), T4 (a', b', c', d')) g =
+    let (a'', g') = randomR (a, a') g
+        (b'', g'') = randomR (b, b') g'
+        (c'', g''') = randomR (c, c') g''
+        (d'', g'''') = randomR (d, d') g'''
+    in (T4 (a'', b'', c'', d''), g'''')
+  random g =
+    let (a, g') = random g
+        (b, g'') = random g'
+        (c, g''') = random g''
+        (d, g'''') = random g'''
+    in (T4 (a, b, c, d), g'''')
+
+cloudsPerTick :: Float
+cloudsPerTick = 1 / (tps * 3)
 
 updateWorld :: RandomGen g => GameState -> Rand g GameState
-updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V2 vpl _) _)} = do
+updateWorld gs = updateLevel gs >>= updateBackground
+
+updateBackground :: RandomGen g => GameState -> Rand g GameState
+updateBackground = generateClouds
+
+generateClouds :: RandomGen g => GameState -> Rand g GameState
+generateClouds gs =
+  getRandomR (T4 (0, -1, 1, 1), T4 (1, viewPort^._y+1, 3, 3)) >>= \(T4 (chance, y, w, h)) ->
+    return $ if chance < cloudsPerTick
+      then gs{gsEntities=insertOther (eWrap $ cloud (V2 (viewPort^._x) y) (V2 w h) 0) (gsEntities gs)}
+      else gs
+
+updateLevel :: RandomGen g => GameState -> Rand g GameState
+updateLevel gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V2 vpl _) _)} = do
   -- TODO handle player here
   let lastPlatformY = (^._y) $ maximumBy (compare `on` (^._x)) $ fmap (rightTop . eBox) (gsEntities gs)
   generated <- generate vp lastPlatformY (gsGenState gs)

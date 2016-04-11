@@ -54,6 +54,7 @@ type Entities = EntitiesC Entity
 
 data CollisionGroup = PlayerCGroup
                     | SceneryCGroup
+                    | BackgroundCGroup
                     | NilCGroup
                     deriving (Show, Generic, NFData, Eq, Enum, Bounded, Ord)
 
@@ -68,14 +69,15 @@ data GameState = GameState { gsEntities :: Entities
                            }
                deriving (Show, Generic, NFData)
 
-data GenState = GenState { genBound :: Float
+data GenState = GenState { genBound     :: Float
                          }
                deriving (Show, Generic, NFData)
 
 -- Stores information that the generation component needs across iterations
 -- Such as up to where it already generated the world
 initialGenState :: GenState
-initialGenState = GenState { genBound = 0.0}
+initialGenState = GenState { genBound = 0.0
+                           }
 
 entitiesAt :: V2 Float -> GameState -> [Entity]
 entitiesAt p gs = foldr (\e es -> if boxContains p (eBox e) then e:es else es) [] (gsEntities gs)

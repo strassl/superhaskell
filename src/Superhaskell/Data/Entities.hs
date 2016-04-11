@@ -10,6 +10,7 @@ module Superhaskell.Data.Entities (
   , foldrWithId
   , mapWithId
   , replaceId
+  , insertOther
 ) where
 
 import           Control.DeepSeq

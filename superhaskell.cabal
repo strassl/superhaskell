@@ -30,6 +30,7 @@ library
                      , Superhaskell.Entities.Player
                      , Superhaskell.Entities.Platform
                      , Superhaskell.Entities.ScoreCounter
+                     , Superhaskell.Entities.Cloud
   build-depends:       base
                      , sdl2
                      , lens

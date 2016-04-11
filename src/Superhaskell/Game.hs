@@ -40,7 +40,7 @@ initialGameState :: GameState
 initialGameState = GameState { gsRunning = True
                              , gsEntities = ents
                              , gsGenState = initialGenState
-                             , gsViewPort = Box (V2 0 0) ((V2 16 9) * 1.25)
+                             , gsViewPort = Box (V2 0 0) viewPort
                              }
   where p = eWrap player
         initPlatform = eWrap $ platform (boxAnchor (eBox p) + V2 0 4) 6

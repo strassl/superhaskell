@@ -76,7 +76,7 @@ initRendering debug bench = do
 
   textures <- loadTextures
 
-  clearColor $= Color4 0 0 0.25 1
+  clearColor $= Color4 (0xAD / 0xFF) (0xE6 / 0xFF) 1 1
   currentProgram $= Just spriteProgram
   uniform spriteProgramUTexture $= TextureUnit 0
   bindVertexArrayObject $= Just unitSquareVao
