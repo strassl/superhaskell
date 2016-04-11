@@ -29,9 +29,9 @@ data KeyFrame = KeyFrame { kfRenderList :: RenderList
                          , kfDuration :: Float -- in s
                          }
 
-data RenderCommand = RenderSprite Text   -- ^ Name of the texture
-                                  Box    -- ^ Position
-                                  Float  -- ^ Z
+data RenderCommand = RenderSprite Text      -- ^ Name of the texture
+                                  Box       -- ^ Position
+                                  Float     -- ^ Z
                    deriving (Show)
 
 type RenderList = [RenderCommand]

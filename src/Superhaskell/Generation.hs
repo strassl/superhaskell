@@ -31,7 +31,8 @@ updateWorld gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V2 vpl _) _)} = 
            , gsGenState = nGenState }
 
 prune :: Float -> Entities -> Entities
-prune vpleft = filterOthers (not . isLeftOfViewport vpleft)
+prune vpleft = filterOthers shouldKeep
+    where shouldKeep e = not (isLeftOfViewport vpleft e) || eCollisionGroup e `notElem` prunableGroups
 
 -- TODO correct height
 -- We partition the world (horizontally) into partitionWidth wide sections (at least 1)
@@ -78,6 +79,9 @@ genUpRange = 4
 
 genDownRange :: Float
 genDownRange = 2
+
+prunableGroups :: [CollisionGroup]
+prunableGroups = [SceneryCGroup]
 
 tail' :: [a] -> [a]
 tail' [] = []

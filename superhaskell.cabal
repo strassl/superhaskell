@@ -29,6 +29,7 @@ library
                      , Superhaskell.Math
                      , Superhaskell.Entities.Player
                      , Superhaskell.Entities.Platform
+                     , Superhaskell.Entities.ScoreCounter
   build-depends:       base
                      , sdl2
                      , lens

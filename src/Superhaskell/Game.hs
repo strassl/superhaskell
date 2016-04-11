@@ -13,6 +13,7 @@ import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Entities.Platform
 import           Superhaskell.Entities.Player
+import           Superhaskell.Entities.ScoreCounter
 import           Superhaskell.Generation
 import           Superhaskell.Math
 import           Superhaskell.Processing
@@ -43,7 +44,8 @@ initialGameState = GameState { gsRunning = True
                              }
   where p = eWrap player
         initPlatform = eWrap $ platform (boxAnchor (eBox p) + V2 0 4) 6
-        ents = appendOthers [initPlatform] $ makeEntities p
+        counter = eWrap $ scoreCounter (V2 0 0)
+        ents = appendOthers [counter, initPlatform] $ makeEntities p
 
 run :: Bool -> Bool -> IO ()
 run debug bench = do

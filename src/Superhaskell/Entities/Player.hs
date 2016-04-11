@@ -66,9 +66,9 @@ instance IsEntity Player where
   eBox p = Box (pos p) (V2 0.72463768115942028986 1)
 
   eRender _ _ p = case state p of
-        InAir _ -> [kf_jump]
-        Dropping -> [kf_jump]
-        OnGround -> [kf_walk1, kf_walk2]
+                    InAir _ -> [kf_jump]
+                    Dropping -> [kf_jump]
+                    OnGround -> [kf_walk1, kf_walk2]
     where kf_walk1 = KeyFrame [RenderSprite "bunny1_walk1" (eBox p) 0] 0.2
           kf_walk2 = KeyFrame [RenderSprite "bunny1_walk2" (eBox p) 0] 0.2
           kf_jump = KeyFrame [RenderSprite "bunny1_jump" (eBox p) 0] 1
