@@ -37,11 +37,11 @@ prune vpleft = filterOthers (not . isLeftOfViewport vpleft)
 -- We partition the world (horizontally) into partitionWidth wide sections (at least 1)
 -- In each partition we generate a single platform
 generate :: RandomGen g => Box -> Float -> GenState -> Rand g [Entity]
-generate _vp@(Box (V2 l _) (V2 w h)) lastY _gs@GenState{genBound = bound}
-  | bound >= (l+w+genAhead) = return []
+generate vp lastY _gs@GenState{genBound = bound}
+  | bound >= (right vp + genAhead) = return []
   | otherwise = do
-    let parts = partition bound (l+w+genAhead)
-    mapM (\p -> eWrap <$> generatePlatform (lastY-h/4, lastY+h/8) p) parts
+    let parts = partition bound (right vp + genAhead)
+    mapM (\p -> eWrap <$> generatePlatform (lastY-genUpRange, lastY+genDownRange) p) parts
 
 partition :: Float -> Float -> [(Float, Float)]
 partition l r = zip parts (tail' parts)
@@ -72,6 +72,12 @@ platformWidth = 3
 
 genAhead :: Float
 genAhead = 8
+
+genUpRange :: Float
+genUpRange = 4
+
+genDownRange :: Float
+genDownRange = 2
 
 tail' :: [a] -> [a]
 tail' [] = []
