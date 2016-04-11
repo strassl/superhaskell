@@ -6,8 +6,9 @@ module Superhaskell.Entities.Cloud (
 ) where
 
 import           Control.DeepSeq
+import           Control.Lens
 import           GHC.Generics
-import           Linear hiding (distance)
+import           Linear                       hiding (distance)
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.RenderList
 import           Superhaskell.Math
@@ -26,8 +27,9 @@ instance IsEntity Cloud where
   eBox c = Box (pos c) (size c)
 
   eRender gs _ c = [KeyFrame [sp] 1]
-    where sp = RenderSprite "cloud"
-                            (moveBox (boxAnchor (gsViewPort gs)) (eBox c))
+    where offset = V2 (boxAnchor (gsViewPort gs) ^. _x) 0
+          sp = RenderSprite "cloud"
+                            (moveBox offset (eBox c))
                             (-100 - distance c)
 
   eTick _ gs _ c = (gs, c{pos=pos c ^-^ V2 cloudSpeed 0})

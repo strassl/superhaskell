@@ -46,10 +46,15 @@ updateBackground = generateClouds
 
 generateClouds :: RandomGen g => GameState -> Rand g GameState
 generateClouds gs =
-  getRandomR (T4 (0, -1, 1, 1), T4 (1, viewPort^._y+1, 3, 3)) >>= \(T4 (chance, y, w, h)) ->
-    return $ if chance < cloudsPerTick
-      then gs{gsEntities=insertOther (eWrap $ cloud (V2 (viewPort^._x) y) (V2 w h) 0) (gsEntities gs)}
-      else gs
+  let player = esPlayer $ gsEntities gs
+      (Box (V2 _ py) _) = eBox player
+      vph = viewPort ^. _y + 1
+  in getRandomR (T4 (0, py - vph / 2, 1.9, 0.75),
+                 T4 (1, py + vph / 2, 2.25, 1))
+     >>= \(T4 (chance, y, w, h)) ->
+       return $ if chance < cloudsPerTick
+         then gs{gsEntities=insertOther (eWrap $ cloud (V2 (viewPort^._x) y) (V2 w h) 0) (gsEntities gs)}
+         else gs
 
 updateLevel :: RandomGen g => GameState -> Rand g GameState
 updateLevel gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V2 vpl _) _)} = do
