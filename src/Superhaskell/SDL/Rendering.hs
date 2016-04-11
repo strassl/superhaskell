@@ -9,6 +9,7 @@ import           Codec.Picture                (convertRGBA8, imageData,
                                                imageHeight, imageWidth,
                                                readImage)
 import           Control.Arrow                ((&&&))
+import           Control.Applicative
 import           Control.Monad
 import           Data.ByteString              (ByteString)
 import qualified Data.HashMap.Strict          as M
@@ -208,7 +209,7 @@ executeRenderCommand sdls _ (RenderSprite tex Box{boxAnchor=V2 x y, boxSize=V2 w
     M33 (V3 (V3 w 0 x)
             (V3 0 h y)
             (V3 0 0 1))
-  textureBinding Texture2D $= M.lookup tex (sdlsTextures sdls)
+  textureBinding Texture2D $= lookupTexture tex (sdlsTextures sdls)
   drawArrays TriangleStrip 0 4
 
 compareRenderCommand :: RenderCommand -> RenderCommand -> Ordering
@@ -216,6 +217,12 @@ compareRenderCommand (RenderSprite _ _ a) (RenderSprite _ _ b) = compare a b
 
 vectorBytes :: (Integral i, VS.Storable a) => VS.Vector a -> i
 vectorBytes v = fromIntegral $ VS.length v * sizeOf (VS.unsafeHead v)
+
+lookupTexture :: T.Text -> Textures -> Maybe TextureObject
+lookupTexture tex map = M.lookup tex map <|> M.lookup pinkTexture map
+
+pinkTexture :: T.Text
+pinkTexture = "pink"
 
 boxVertexShaderSource :: ByteString
 boxVertexShaderSource =
