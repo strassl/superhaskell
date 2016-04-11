@@ -62,14 +62,15 @@ isLeftOfViewport leftBound e = boxRight <= leftBound
   where boxRight = rightBottom (eBox e) ^._x
 
 partitionWidth :: Float
-partitionWidth = 6
+partitionWidth = 7
 
 -- How much of the partition should be kept free of platforms
+-- Constrains anchor on each side
 borderWidth :: Float
 borderWidth = 2
 
 platformWidth :: Float
-platformWidth = 3
+platformWidth = 4
 
 genAhead :: Float
 genAhead = 8
