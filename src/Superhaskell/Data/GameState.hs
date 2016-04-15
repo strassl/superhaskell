@@ -10,6 +10,7 @@ module Superhaskell.Data.GameState (
 
 import           Control.DeepSeq
 import           Data.Fixed
+import           Data.Maybe
 import           GHC.Generics
 import           Linear.V2                    (V2 (..))
 import           Superhaskell.Data.Entities
@@ -89,8 +90,12 @@ toRenderList :: Float -> GameState -> RenderList
 toRenderList time gs = concatMap (applyAnimation time) $ mapWithId (eRender gs) (gsEntities gs)
 
 applyAnimation :: Float -> KeyFrames -> RenderList
-applyAnimation time kfs = fst . head $ dropWhile (\(_, end) -> end < offset) framesWithEnds
+applyAnimation time kfs = maybe [] fst $ safeHead $ dropWhile (\(_, end) -> end < offset) framesWithEnds
     where totalDuration = sum $ map kfDuration kfs
           offset = time `mod'` totalDuration
           framesWithEnds = zip (map kfRenderList kfs)
                                (tail $ scanl (+) 0 $ map kfDuration kfs) -- Drop the first (0)
+
+safeHead :: [a] -> Maybe a
+safeHead [] = Nothing
+safeHead (x:xs) = Just x
