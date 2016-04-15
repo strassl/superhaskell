@@ -10,7 +10,6 @@ module Superhaskell.Data.GameState (
 
 import           Control.DeepSeq
 import           Data.Fixed
-import           Data.Maybe
 import           GHC.Generics
 import           Linear.V2                    (V2 (..))
 import           Superhaskell.Data.Entities
@@ -98,4 +97,4 @@ applyAnimation time kfs = maybe [] fst $ safeHead $ dropWhile (\(_, end) -> end 
 
 safeHead :: [a] -> Maybe a
 safeHead [] = Nothing
-safeHead (x:xs) = Just x
+safeHead (x:_) = Just x
