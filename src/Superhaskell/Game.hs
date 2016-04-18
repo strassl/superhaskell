@@ -2,11 +2,11 @@
 module Superhaskell.Game (run) where
 
 import           Control.Concurrent
-import           Control.Concurrent.STM
 import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Random
 import           Data.Foldable
+import           Data.IORef
 import           Linear
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
@@ -24,15 +24,15 @@ import           Superhaskell.SDL.Rendering     (SDLRenderingState,
 import qualified System.Clock                   as C
 import           Text.Printf
 
-data RenderLoopState = RenderLoopState { rlsGameStateBox  :: TVar GameState
-                                       , rlsInputStateBox :: TVar InputState
+data RenderLoopState = RenderLoopState { rlsGameStateBox  :: IORef GameState
+                                       , rlsInputStateBox :: IORef InputState
                                        , rlsInputState    :: InputState
                                        , rlsSdlRState     :: SDLRenderingState
                                        , rlsSdlIState     :: SDLInputState }
 
-data GameLoopState = GameLoopState { glsGameStateBox  :: TVar GameState
+data GameLoopState = GameLoopState { glsGameStateBox  :: IORef GameState
                                    , glsGameState     :: GameState
-                                   , glsInputStateBox :: TVar InputState
+                                   , glsInputStateBox :: IORef InputState
                                    , glsRandomGen     :: StdGen
                                    }
 
@@ -54,8 +54,8 @@ run debug bench = do
   -- Init SDL
   (sdlRState, sdlIState) <- initSDL debug bench
   -- Init shared data boxes
-  inputStateBox <- atomically $ newTVar defaultInputState
-  gameStateBox <- atomically $ newTVar initialGameState
+  inputStateBox <- newIORef defaultInputState
+  gameStateBox <- newIORef initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
   let randGen = mkStdGen 43
@@ -161,11 +161,11 @@ iterateTimesM iterations f init = foldrM (const f) init [1..iterations]
 tickGame :: RandomGen g => InputState -> GameState -> Rand g GameState
 tickGame is gs = fmap (tickGameState is) (updateWorld gs)
 
-atomicWrite :: TVar a -> a -> IO ()
-atomicWrite box val = atomically (writeTVar box val)
+atomicWrite :: IORef a -> a -> IO ()
+atomicWrite = atomicWriteIORef
 
-atomicRead :: TVar a -> IO a
-atomicRead = atomically . readTVar
+atomicRead :: IORef a -> IO a
+atomicRead = readIORef
 
 getTimeSeconds :: Floating f => IO f
 getTimeSeconds = do
