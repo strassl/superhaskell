@@ -58,7 +58,7 @@ run debug bench = do
   gameStateBox <- newIORef initialGameState
   -- Spawn game thread
   startTime <- getTimeSeconds
-  let randGen = mkStdGen 43
+  randGen <- newStdGen
   _ <- forkIO $ runGameLoop startTime 0 startTime 0 0 (GameLoopState gameStateBox
                                                                      initialGameState
                                                                      inputStateBox
