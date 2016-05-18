@@ -22,10 +22,10 @@ viewPort = V2 16 9 * 1.25
 
 -- Advances the game state by one tick.
 tickGameState :: InputState -> GameState -> GameState
-tickGameState is gs =
-  if isWantQuit is
-    then gs{ gsRunning = False }
-    else (moveViewPort . collideEntities . tickEntities is) gs
+tickGameState is gs
+  | isWantQuit is = gs{ gsRunning = False }
+  | gsGameOver gs = gs
+  | otherwise     = (moveViewPort . collideEntities . tickEntities is) gs
 
 moveViewPort :: GameState -> GameState
 moveViewPort gs@GameState{gsViewPort = vp@(Box _ wh)} = gs{gsViewPort = withCenter newCamCenter vp}

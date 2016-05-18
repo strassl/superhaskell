@@ -44,6 +44,10 @@ playerDropSpeed = 20 / tps
 playerBoostSpeed :: Float
 playerBoostSpeed = 10 / tps
 
+-- Number of ticks after which the placer is game over.
+playerGameOver :: Float
+playerGameOver = 2 * tps
+
 -- Not exported -> no need to scope :)
 data Player = Player { pos        :: V2 Float
                      , speed      :: Float
@@ -52,7 +56,7 @@ data Player = Player { pos        :: V2 Float
                      }
             deriving (Show, Generic, NFData)
 
-data PlayerState = InAir PlayerInAir | Dropping | OnGround
+data PlayerState = InAir PlayerInAir | Dropping Float | OnGround
                  deriving (Show, Generic, NFData)
 
 data PlayerInAir = PlayerInAir { fallingTicks :: Float
@@ -67,7 +71,7 @@ instance IsEntity Player where
 
   eRender _ _ p = case state p of
                     InAir _ -> [kf_jump]
-                    Dropping -> [kf_jump]
+                    Dropping _ -> [kf_jump]
                     OnGround -> [kf_walk1, kf_walk2]
     where kf_walk1 = KeyFrame [RenderSprite "bunny1_walk1" (eBox p) 0] 0.2
           kf_walk2 = KeyFrame [RenderSprite "bunny1_walk2" (eBox p) 0] 0.2
@@ -76,7 +80,7 @@ instance IsEntity Player where
   eTick is gs pid p =
     let (gs', p') = case state p of
                       InAir _ -> tickInAir is gs pid p
-                      Dropping -> tickDropping is gs pid p
+                      Dropping _ -> tickDropping is gs pid p
                       OnGround -> tickOnGround is gs pid p
         speed' = speed p' + playerAcceleration
         extraSpeed' = max 0 (extraSpeed p' - playerDeacceleration)
@@ -102,7 +106,7 @@ tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=In
                         then -7
                         else fallingTicks + 1
       state'
-        | isDrop is = Dropping
+        | isDrop is = Dropping 0
         | doBoost   = InAir state{ fallingTicks=fallingTicks'
                                  , canBoost=False
                                  }
@@ -110,13 +114,19 @@ tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=In
       extraSpeed' = if doBoost
                       then extraSpeed + playerBoostSpeed
                       else extraSpeed
-  in (gs, p{pos=pos', state=state', extraSpeed=extraSpeed'})
+
+      gs' = gs{gsGameOver=gsGameOver gs || fallingTicks' > playerGameOver}
+  in (gs', p{pos=pos', state=state', extraSpeed=extraSpeed'})
 tickInAir _ _ _ _ =
   error "Player is not InAir"
 
 tickDropping :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickDropping _ gs _ p@Player{pos=pos, state=Dropping} =
-  (gs, p{pos=pos + V2 0 playerDropSpeed})
+tickDropping _ gs _ p@Player{pos=pos, state=Dropping droppingTicks} =
+  let droppingTicks' = droppingTicks + 1
+      gameOver' = gsGameOver gs || droppingTicks' > playerGameOver
+  in ( gs{gsGameOver=gameOver'}
+     , p{ pos=pos + V2 0 playerDropSpeed
+        , state=Dropping (droppingTicks + 1) } )
 tickDropping _ _ _ _ =
   error "Player not Dropping"
 
@@ -146,4 +156,4 @@ collideWithScenery other p =
   in p{pos=V2 x' y', state=if edge == BottomEdge then OnGround else state p}
 
 player :: Player
-player = Player (V2 4 2) playerStartSpeed 0 Dropping
+player = Player (V2 4 2) playerStartSpeed 0 (Dropping 0)

@@ -41,6 +41,7 @@ initialGameState = GameState { gsRunning = True
                              , gsEntities = ents
                              , gsGenState = initialGenState
                              , gsViewPort = Box (V2 0 0) viewPort
+                             , gsGameOver = False
                              }
   where p = eWrap player
         initPlatform = eWrap $ platform (boxAnchor (eBox p) + V2 0 4) 6
