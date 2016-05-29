@@ -20,8 +20,10 @@ data InputState = InputState { -- | True if the user wants to quit the game.
                              , isDrop      :: Bool
                                -- | True if the user presses boost.
                              , isBoost     :: Bool
+                               -- | True if the user presses restart game.
+                             , isRestart   :: Bool
                              }
                 deriving (Show, Generic, NFData)
 
 defaultInputState :: InputState
-defaultInputState = InputState False (V2 0 0) False False False
+defaultInputState = InputState False (V2 0 0) False False False False

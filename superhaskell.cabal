@@ -31,6 +31,7 @@ library
                      , Superhaskell.Entities.Platform
                      , Superhaskell.Entities.ScoreCounter
                      , Superhaskell.Entities.Cloud
+                     , Superhaskell.Entities.GameStart
   build-depends:       base
                      , sdl2
                      , lens

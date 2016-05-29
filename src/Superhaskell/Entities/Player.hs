@@ -15,6 +15,7 @@ import           Superhaskell.Data.InputState
 import           Superhaskell.Data.RenderList
 import           Superhaskell.Math
 import           Superhaskell.Processing
+import           Superhaskell.Entities.GameStart
 
 -- Controlled speed in units/tick.
 playerManualSpeed :: Float
@@ -92,7 +93,7 @@ instance IsEntity Player where
       _ -> (gs, p)
 
 tickInAir :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
+tickInAir is gs i p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
   let PlayerInAir{fallingTicks=fallingTicks, canBoost=canBoost} = state
       (V2 inputX _) = isDirection is
 
@@ -115,20 +116,25 @@ tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=In
                       then extraSpeed + playerBoostSpeed
                       else extraSpeed
 
-      gs' = gs{gsGameOver=gsGameOver gs || fallingTicks' > playerGameOver}
+      gs' = applyGameOver (fallingTicks' > playerGameOver) gs i
   in (gs', p{pos=pos', state=state', extraSpeed=extraSpeed'})
 tickInAir _ _ _ _ =
   error "Player is not InAir"
 
 tickDropping :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickDropping _ gs _ p@Player{pos=pos, state=Dropping droppingTicks} =
+tickDropping _ gs i p@Player{pos=pos, state=Dropping droppingTicks} =
   let droppingTicks' = droppingTicks + 1
-      gameOver' = gsGameOver gs || droppingTicks' > playerGameOver
-  in ( gs{gsGameOver=gameOver'}
+  in ( applyGameOver (droppingTicks' > playerGameOver) gs i
      , p{ pos=pos + V2 0 playerDropSpeed
         , state=Dropping (droppingTicks + 1) } )
 tickDropping _ _ _ _ =
   error "Player not Dropping"
+
+applyGameOver :: Bool -> GameState -> Id -> GameState
+applyGameOver False gs _ = gs
+-- TODO replaceId doesn't work here, why?
+applyGameOver True gs i = gs{gsEntities = insertOther (eWrap nGameStart) (gsEntities gs)}
+  where nGameStart = eWrap $ gameStart (eWrap player)
 
 tickOnGround :: InputState -> GameState -> Id -> Player -> (GameState, Player)
 tickOnGround is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=OnGround} =

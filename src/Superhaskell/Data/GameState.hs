@@ -66,7 +66,6 @@ data GameState = GameState { gsEntities :: Entities
                            , gsRunning  :: Bool
                            , gsGenState :: GenState
                            , gsViewPort :: Box
-                           , gsGameOver :: Bool
                            }
                deriving (Show, Generic, NFData)
 

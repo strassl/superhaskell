@@ -24,7 +24,6 @@ viewPort = V2 16 9 * 1.25
 tickGameState :: InputState -> GameState -> GameState
 tickGameState is gs
   | isWantQuit is = gs{ gsRunning = False }
-  | gsGameOver gs = gs
   | otherwise     = (moveViewPort . collideEntities . tickEntities is) gs
 
 moveViewPort :: GameState -> GameState
