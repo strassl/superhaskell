@@ -59,6 +59,12 @@ simpleTick tick is gs eid e =
 
 type Entities = EntitiesC Entity
 
+data UpdateCommand = UpdateId Id (Maybe Entity)
+                   | Spawn Entity
+                   deriving (Show)
+
+type UpdateList = [UpdateCommand]
+
 data CollisionGroup = PlayerCGroup
                     | SceneryCGroup
                     | BackgroundCGroup
