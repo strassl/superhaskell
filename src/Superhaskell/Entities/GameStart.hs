@@ -22,7 +22,6 @@ data GameStart = GameStart { playerEntity :: Entity
 
 instance IsEntity GameStart where
   eBox _ = Box (V2 0 0) (V2 0 0)
-  eCollisionGroup _ = NilCGroup
   eRender gs i e = [KeyFrame [RenderSprite "game_over" (gsViewPort gs) 999] 1.0]
   eTick is gs i e@(GameStart p)
     | isRestart is = restartGame p i gs

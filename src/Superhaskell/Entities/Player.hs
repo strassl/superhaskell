@@ -66,7 +66,8 @@ data PlayerInAir = PlayerInAir { fallingTicks :: Float
                  deriving (Show, Generic, NFData)
 
 instance IsEntity Player where
-  eCollisionGroup _ = PlayerCGroup
+  eCollisionGroups _ = [PlayerCGroup]
+  eCollidesWith _ = [SceneryCGroup]
 
   eBox p = Box (pos p) (V2 0.72463768115942028986 1)
 
@@ -90,10 +91,9 @@ instance IsEntity Player where
       then eWrap $ gameStart (eWrap player)
       else eWrap p''
         
-  eCollide _ other gs _ p =
-    case eCollisionGroup other of
-      SceneryCGroup -> (gs, collideWithScenery other p)
-      _ -> (gs, p)
+  eCollide = simpleCollide $ \gs cg other p -> case cg of
+    SceneryCGroup -> collideWithScenery other p
+    _ -> p
 
 tickInAir :: InputState -> GameState -> Player -> Player
 tickInAir is gs p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
