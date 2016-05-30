@@ -20,6 +20,7 @@ import           Foreign.Marshal              (with)
 import           Foreign.Ptr                  (castPtr, nullPtr)
 import           Foreign.Storable             (sizeOf)
 import           Graphics.GL                  (glUniformMatrix3fv)
+import           Graphics.GL.ARB.DebugOutput
 import           Graphics.Rendering.OpenGL    hiding (imageHeight)
 import           Linear                       (V2 (..), V3 (..))
 import qualified SDL
@@ -60,8 +61,10 @@ initRendering debug bench = do
 
   SDL.swapInterval $= if bench then SDL.ImmediateUpdates else SDL.SynchronizedUpdates
 
-  debugOutput $= Enabled
-  debugMessageCallback $= Just print
+  supportsDebugOutput <- glGetARBDebugOutput
+  when supportsDebugOutput $ do
+    debugOutput $= Enabled
+    debugMessageCallback $= Just print
 
   blend $= Enabled
   blendEquation $= FuncAdd
@@ -253,8 +256,10 @@ textureFragmentShaderSource =
 
     uniform sampler2D uTexture;
 
+    out vec4 color;
+
     void main()
     {
-      gl_FragColor = texture(uTexture, oTexPos);
+      color = texture(uTexture, oTexPos);
     }
   |]
