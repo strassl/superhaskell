@@ -15,10 +15,10 @@ import           Data.Function                  (on)
 import           Linear.V2
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
+import           Superhaskell.Entities.Cloud
 import           Superhaskell.Entities.Platform
 import           Superhaskell.Math
-import Superhaskell.Processing
-import Superhaskell.Entities.Cloud
+import           Superhaskell.Processing
 
 newtype T4 a b c d = T4 (a, b, c, d)
 instance (Random a, Random b, Random c, Random d) => Random (T4 a b c d) where

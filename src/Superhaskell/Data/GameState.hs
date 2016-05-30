@@ -59,7 +59,7 @@ simpleTick tick is gs eid e = [UpdateId eid (Just $ eWrap $ tick is gs e)]
 
 simpleCollide :: (IsEntity e, IsEntity o) => (GameState -> CollisionGroup -> o -> e -> e) -> GameState -> Id -> o -> Id -> e -> UpdateList
 simpleCollide collide gs _ o eid e =
-  let relevantCgs = filter (`elem` (eCollidesWith e)) (eCollisionGroups o)
+  let relevantCgs = filter (`elem` eCollidesWith e) (eCollisionGroups o)
   in [UpdateId eid (Just $ eWrap $ foldl (\e cg -> collide gs cg o e) e relevantCgs)]
 
 type Entities = EntitiesC Entity
@@ -88,7 +88,7 @@ data GameState = GameState { gsEntities :: Entities
                            }
                deriving (Show, Generic, NFData)
 
-data GenState = GenState { genBound     :: Float
+data GenState = GenState { genBound :: Float
                          }
                deriving (Show, Generic, NFData)
 

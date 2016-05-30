@@ -8,8 +8,8 @@ module Superhaskell.SDL.Rendering (
 import           Codec.Picture                (convertRGBA8, imageData,
                                                imageHeight, imageWidth,
                                                readImage)
-import           Control.Arrow                ((&&&))
 import           Control.Applicative
+import           Control.Arrow                ((&&&))
 import           Control.Monad
 import           Data.ByteString              (ByteString)
 import qualified Data.HashMap.Strict          as M

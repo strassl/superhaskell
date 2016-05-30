@@ -4,7 +4,7 @@
 module Superhaskell.Entities.ScoreCounter (ScoreCounter, scoreCounter) where
 
 import           Control.DeepSeq
-import           Data.Text (Text, snoc)
+import           Data.Text                    (Text, snoc)
 import           GHC.Generics
 import           Linear
 import           Superhaskell.Data.Entities
