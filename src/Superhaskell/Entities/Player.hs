@@ -19,7 +19,7 @@ import           Superhaskell.Entities.GameStart
 
 -- Controlled speed in units/tick.
 playerManualSpeed :: Float
-playerManualSpeed = 3 / tps
+playerManualSpeed = 0 / tps
 
 -- Number of ticks the player needs to reach the apex of a jump.
 playerJumpTime :: Float
@@ -35,7 +35,7 @@ playerDeacceleration = 15 / tps / tps
 
 -- Start speed in units/tick.
 playerStartSpeed :: Float
-playerStartSpeed = 1 / tps
+playerStartSpeed = 5 / tps
 
 -- Drop speed in units/tick.
 playerDropSpeed :: Float
