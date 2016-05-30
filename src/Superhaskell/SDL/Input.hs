@@ -44,7 +44,7 @@ getInputState state is = do
            , isJump = keyboardState ScancodeSpace || joystickState 0
            , isDrop = keyboardState ScancodeS || joystickState 2
            , isBoost = keyboardState ScancodeLShift || joystickState 1
-           , isRestart = keyboardState ScancodeKPEnter --- TODO joystickState
+           , isRestart = keyboardState ScancodeR --- TODO joystickState
            }
 
 handleEvent :: SDLInputState -> Bool -> Event -> IO Bool
