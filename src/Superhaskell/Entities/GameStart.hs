@@ -25,8 +25,8 @@ instance IsEntity GameStart where
   eCollisionGroup _ = NilCGroup
   eRender gs i e = [KeyFrame [RenderSprite "game_start" (gsViewPort gs) 999] 1.0]
   eTick is gs i e@(GameStart p)
-    | isRestart is = (restartGame p i gs, e)
-    | otherwise = (gs, e)
+    | isRestart is = restartGame p i gs
+    | otherwise = gs
 
 restartGame :: Entity -> Id -> GameState -> GameState
 restartGame nextPlayer i gs = gs { gsEntities = ents

@@ -32,7 +32,8 @@ instance IsEntity Cloud where
                             (moveBox offset (eBox c))
                             (-100 - distance c)
 
-  eTick _ gs _ c = (gs, c{pos=pos c ^-^ V2 cloudSpeed 0})
+  eTick = simpleTick tick
+    where tick _ _ c = c{pos=pos c ^-^ V2 cloudSpeed 0}
 
 cloud :: V2 Float -> V2 Float -> Float -> Cloud
 cloud = Cloud

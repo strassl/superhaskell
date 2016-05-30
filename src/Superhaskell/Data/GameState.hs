@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE GADTs          #-}
 module Superhaskell.Data.GameState (
-    GameState(..), entitiesAt, entitiesAtInGroup, toRenderList
+    GameState(..), simpleTick, entitiesAt, entitiesAtInGroup, toRenderList
   , GenState(..), initialGenState -- TODO remove initialGenState
   , CollisionGroup(..), collidesWith
   , IsEntity(..), Entity, Entities
@@ -18,14 +18,14 @@ import           Superhaskell.Data.RenderList
 import           Superhaskell.Math
 
 class (Show e, NFData e) => IsEntity e where
-  eTick :: InputState -> GameState -> Id -> e -> (GameState, e)
+  eTick :: InputState -> GameState -> Id -> e -> GameState
   eRender :: GameState -> Id -> e -> KeyFrames
   eCollide :: IsEntity o => Id -> o -> GameState -> Id -> e -> (GameState, e)
   eCollisionGroup :: e -> CollisionGroup
   eBox :: e -> Box
   eWrap :: e -> Entity
 
-  eTick _ gs _ e = (gs, e)
+  eTick _ gs _ _ = gs
   eRender _ _ _ = []
   eCollide _ _ gs _ e = (gs, e)
   eCollisionGroup _ = NilCGroup
@@ -43,12 +43,19 @@ instance NFData Entity where
 
 -- Urgh newtype wrappers.
 instance IsEntity Entity where
-  eTick is gs eid (Entity e) = let (gs', e') = eTick is gs eid e in (gs', Entity e')
+  eTick is gs eid (Entity e) = eTick is gs eid e
   eRender gs eid (Entity e) = eRender gs eid e
   eCollide oid other gs eid (Entity e) = let (gs', e') = eCollide oid other gs eid e in (gs', Entity e')
   eCollisionGroup (Entity e) = eCollisionGroup e
   eBox (Entity e) = eBox e
   eWrap = id
+
+
+simpleTick :: IsEntity e => (InputState -> GameState -> e -> e) -> InputState -> GameState -> Id -> e -> GameState
+simpleTick tick is gs eid e =
+  let e' = tick is gs e
+  in gs{gsEntities=replaceId eid (eWrap e') (gsEntities gs)}
+
 
 type Entities = EntitiesC Entity
 

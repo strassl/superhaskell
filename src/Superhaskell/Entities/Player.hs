@@ -78,14 +78,15 @@ instance IsEntity Player where
           kf_walk2 = KeyFrame [RenderSprite "bunny1_walk2" (eBox p) 0] 0.2
           kf_jump = KeyFrame [RenderSprite "bunny1_jump" (eBox p) 0] 1
 
-  eTick is gs pid p =
-    let (gs', p') = case state p of
+  eTick is gs pid p = testGameOver p'' gs'' pid
+    where gs'' = gs'{gsEntities=replaceId pid (eWrap p'') (gsEntities gs')}
+          p'' = p'{speed=speed', extraSpeed=extraSpeed'}
+          (gs', p') = case state p of
                       InAir _ -> tickInAir is gs pid p
                       Dropping _ -> tickDropping is gs pid p
                       OnGround -> tickOnGround is gs pid p
-        speed' = speed p' + playerAcceleration
-        extraSpeed' = max 0 (extraSpeed p' - playerDeacceleration)
-    in (gs', p'{speed=speed', extraSpeed=extraSpeed'})
+          speed' = speed p' + playerAcceleration
+          extraSpeed' = max 0 (extraSpeed p' - playerDeacceleration)
 
   eCollide _ other gs _ p =
     case eCollisionGroup other of
@@ -93,7 +94,7 @@ instance IsEntity Player where
       _ -> (gs, p)
 
 tickInAir :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickInAir is gs i p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
+tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
   let PlayerInAir{fallingTicks=fallingTicks, canBoost=canBoost} = state
       (V2 inputX _) = isDirection is
 
@@ -116,25 +117,29 @@ tickInAir is gs i p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=In
                       then extraSpeed + playerBoostSpeed
                       else extraSpeed
 
-      gs' = applyGameOver (fallingTicks' > playerGameOver) gs i
-  in (gs', p{pos=pos', state=state', extraSpeed=extraSpeed'})
+  in (gs, p{pos=pos', state=state', extraSpeed=extraSpeed'})
 tickInAir _ _ _ _ =
   error "Player is not InAir"
 
 tickDropping :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickDropping _ gs i p@Player{pos=pos, state=Dropping droppingTicks} =
+tickDropping _ gs _ p@Player{pos=pos, state=Dropping droppingTicks} =
   let droppingTicks' = droppingTicks + 1
-  in ( applyGameOver (droppingTicks' > playerGameOver) gs i
+  in ( gs
      , p{ pos=pos + V2 0 playerDropSpeed
-        , state=Dropping (droppingTicks + 1) } )
+        , state=Dropping droppingTicks' } )
 tickDropping _ _ _ _ =
   error "Player not Dropping"
 
+testGameOver :: Player -> GameState -> Id -> GameState
+testGameOver Player{state=(Dropping droppingTicks)} gs pid = applyGameOver (droppingTicks > playerGameOver) gs pid
+testGameOver Player{state=(InAir (PlayerInAir fallingTicks _))} gs pid = applyGameOver (fallingTicks > playerGameOver) gs pid
+testGameOver _ gs _ = gs
+
 applyGameOver :: Bool -> GameState -> Id -> GameState
 applyGameOver False gs _ = gs
--- TODO replaceId doesn't work here, why?
-applyGameOver True gs i = gs{gsEntities = insertOther (eWrap nGameStart) (gsEntities gs)}
+applyGameOver True gs i = gs{gsEntities = replaceId i (eWrap nGameStart) (gsEntities gs)}
   where nGameStart = eWrap $ gameStart (eWrap player)
+
 
 tickOnGround :: InputState -> GameState -> Id -> Player -> (GameState, Player)
 tickOnGround is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=OnGround} =

@@ -38,9 +38,7 @@ tickEntities :: InputState -> GameState -> GameState
 tickEntities is gs = foldrWithId (tickEntity is) gs (gsEntities gs)
 
 tickEntity :: InputState -> Id -> Entity -> GameState -> GameState
-tickEntity is eid e gs =
-  let (gs', e') = eTick is gs eid e
-  in gs'{gsEntities=replaceId eid e' (gsEntities gs')}
+tickEntity is eid e gs = eTick is gs eid e
 
 collideEntities :: GameState -> GameState
 collideEntities gs =
