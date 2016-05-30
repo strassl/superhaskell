@@ -36,8 +36,7 @@ moveViewPort gs@GameState{gsViewPort = vp@(Box _ wh)} = gs{gsViewPort = withCent
 
 tickEntities :: InputState -> GameState -> GameState
 tickEntities is gs =
-  let commands = concat $ mapWithId (\eid e -> eTick is gs eid e) (gsEntities gs)
-  in foldl (flip applyCommand) gs commands
+  foldrWithId (\eid e gs -> foldl (flip applyCommand) gs (eTick is gs eid e)) gs (gsEntities gs)
 
 collideEntities :: GameState -> GameState
 collideEntities gs =
