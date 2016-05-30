@@ -12,6 +12,7 @@ module Superhaskell.Data.Entities (
   , replaceId
   , insertOther
   , removeId
+  , findId
 ) where
 
 import           Control.DeepSeq
@@ -66,3 +67,9 @@ replaceId (Id i) e (EntitiesC nextId elem0 m) =
 removeId :: Id -> EntitiesC a -> EntitiesC a
 removeId (Id 0) es = es
 removeId (Id i) (EntitiesC nextId elem0 m) = EntitiesC nextId elem0 (M.delete i m)
+
+findId :: Id -> EntitiesC a -> Maybe a
+findId (Id 0) (EntitiesC _ elem0 _) = Just elem0
+findId (Id i) (EntitiesC _ _ m) = i `M.lookup` m
+
+
