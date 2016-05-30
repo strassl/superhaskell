@@ -35,10 +35,9 @@ moveViewPort gs@GameState{gsViewPort = vp@(Box _ wh)} = gs{gsViewPort = withCent
         newCamCenter = (oldCamCenter * (1-targetWeight)) + (targetCenter * targetWeight)
 
 tickEntities :: InputState -> GameState -> GameState
-tickEntities is gs = foldrWithId (tickEntity is) gs (gsEntities gs)
-
-tickEntity :: InputState -> Id -> Entity -> GameState -> GameState
-tickEntity is eid e gs = eTick is gs eid e
+tickEntities is gs =
+  let commands = concat $ mapWithId (\eid e -> eTick is gs eid e) (gsEntities gs)
+  in foldl (flip applyCommand) gs commands
 
 collideEntities :: GameState -> GameState
 collideEntities gs =

@@ -11,6 +11,7 @@ module Superhaskell.Data.Entities (
   , mapWithId
   , replaceId
   , insertOther
+  , removeId
 ) where
 
 import           Control.DeepSeq
@@ -61,3 +62,7 @@ replaceId (Id i) e (EntitiesC nextId elem0 m) =
   if i `M.member` m
     then EntitiesC nextId elem0 (M.insert i e m)
     else EntitiesC nextId elem0 m
+
+removeId :: Id -> EntitiesC a -> EntitiesC a
+removeId (Id 0) es = es
+removeId (Id i) (EntitiesC nextId elem0 m) = EntitiesC nextId elem0 (M.delete i m)

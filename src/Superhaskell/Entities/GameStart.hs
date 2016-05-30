@@ -26,16 +26,15 @@ instance IsEntity GameStart where
   eRender gs i e = [KeyFrame [RenderSprite "game_over" (gsViewPort gs) 999] 1.0]
   eTick is gs i e@(GameStart p)
     | isRestart is = restartGame p i gs
-    | otherwise = gs
+    | otherwise = []
 
-restartGame :: Entity -> Id -> GameState -> GameState
-restartGame nextPlayer i gs = gs { gsEntities = ents
-                                 , gsGenState = initialGenState
-                                 , gsViewPort = Box (V2 0 0) (boxSize $ gsViewPort gs)
-                                 }
+restartGame :: Entity -> Id -> GameState -> UpdateList
+restartGame nextPlayer i gs = [ ResetGame nextPlayer (Box (V2 0 0) (boxSize $ gsViewPort gs))
+                              , Spawn counter
+                              , Spawn initPlatform
+                              ]
   where initPlatform = eWrap $ platform (boxAnchor (eBox nextPlayer) + V2 0 4) 6
         counter = eWrap $ scoreCounter (V2 0 0)
-        ents = appendOthers [counter, initPlatform] $ makeEntities nextPlayer
 
 gameStart :: Entity -> GameStart
 gameStart = GameStart

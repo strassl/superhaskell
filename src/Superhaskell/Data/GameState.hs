@@ -2,10 +2,11 @@
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE GADTs          #-}
 module Superhaskell.Data.GameState (
-    GameState(..), simpleTick, entitiesAt, entitiesAtInGroup, toRenderList
+    GameState(..), simpleTick, entitiesAt, entitiesAtInGroup, toRenderList, applyCommand
   , GenState(..), initialGenState -- TODO remove initialGenState
   , CollisionGroup(..), collidesWith
   , IsEntity(..), Entity, Entities
+  , UpdateCommand(..), UpdateList
 ) where
 
 import           Control.DeepSeq
@@ -18,14 +19,14 @@ import           Superhaskell.Data.RenderList
 import           Superhaskell.Math
 
 class (Show e, NFData e) => IsEntity e where
-  eTick :: InputState -> GameState -> Id -> e -> GameState
+  eTick :: InputState -> GameState -> Id -> e -> UpdateList
   eRender :: GameState -> Id -> e -> KeyFrames
   eCollide :: IsEntity o => Id -> o -> GameState -> Id -> e -> (GameState, e)
   eCollisionGroup :: e -> CollisionGroup
   eBox :: e -> Box
   eWrap :: e -> Entity
 
-  eTick _ gs _ _ = gs
+  eTick _ _ _ _ = []
   eRender _ _ _ = []
   eCollide _ _ gs _ e = (gs, e)
   eCollisionGroup _ = NilCGroup
@@ -51,19 +52,23 @@ instance IsEntity Entity where
   eWrap = id
 
 
-simpleTick :: IsEntity e => (InputState -> GameState -> e -> e) -> InputState -> GameState -> Id -> e -> GameState
-simpleTick tick is gs eid e =
-  let e' = tick is gs e
-  in gs{gsEntities=replaceId eid (eWrap e') (gsEntities gs)}
-
+simpleTick :: (IsEntity e1, IsEntity e2) => (InputState -> GameState -> e1 -> e2) -> InputState -> GameState -> Id -> e1 -> UpdateList
+simpleTick tick is gs eid e = [UpdateId eid (Just $ eWrap $ tick is gs e)]
 
 type Entities = EntitiesC Entity
 
 data UpdateCommand = UpdateId Id (Maybe Entity)
                    | Spawn Entity
+                   | ResetGame Entity Box
                    deriving (Show)
 
 type UpdateList = [UpdateCommand]
+
+applyCommand :: UpdateCommand -> GameState -> GameState
+applyCommand (UpdateId id (Just e)) gs = gs{gsEntities=replaceId id e (gsEntities gs)}
+applyCommand (UpdateId id Nothing) gs = gs{gsEntities=removeId id (gsEntities gs)}
+applyCommand (Spawn e) gs = gs{gsEntities=insertOther e (gsEntities gs)}
+applyCommand (ResetGame player viewport) gs = gs{gsGenState=initialGenState, gsEntities=makeEntities player, gsViewPort=viewport}
 
 data CollisionGroup = PlayerCGroup
                     | SceneryCGroup

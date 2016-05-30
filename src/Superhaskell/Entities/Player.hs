@@ -78,23 +78,25 @@ instance IsEntity Player where
           kf_walk2 = KeyFrame [RenderSprite "bunny1_walk2" (eBox p) 0] 0.2
           kf_jump = KeyFrame [RenderSprite "bunny1_jump" (eBox p) 0] 1
 
-  eTick is gs pid p = testGameOver p'' gs'' pid
-    where gs'' = gs'{gsEntities=replaceId pid (eWrap p'') (gsEntities gs')}
-          p'' = p'{speed=speed', extraSpeed=extraSpeed'}
-          (gs', p') = case state p of
-                      InAir _ -> tickInAir is gs pid p
-                      Dropping _ -> tickDropping is gs pid p
-                      OnGround -> tickOnGround is gs pid p
-          speed' = speed p' + playerAcceleration
-          extraSpeed' = max 0 (extraSpeed p' - playerDeacceleration)
-
+  eTick = simpleTick $ \is gs p ->
+    let p' = case state p of
+               InAir _    -> tickInAir is gs p
+               Dropping _ -> tickDropping is gs p
+               OnGround   -> tickOnGround is gs p
+        speed' = speed p' + playerAcceleration
+        extraSpeed' = max 0 (extraSpeed p' - playerDeacceleration)
+        p'' = p'{speed=speed', extraSpeed=extraSpeed'}
+    in if testGameOver p''
+      then eWrap $ gameStart (eWrap player)
+      else eWrap p''
+        
   eCollide _ other gs _ p =
     case eCollisionGroup other of
       SceneryCGroup -> (gs, collideWithScenery other p)
       _ -> (gs, p)
 
-tickInAir :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
+tickInAir :: InputState -> GameState -> Player -> Player
+tickInAir is gs p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
   let PlayerInAir{fallingTicks=fallingTicks, canBoost=canBoost} = state
       (V2 inputX _) = isDirection is
 
@@ -117,32 +119,25 @@ tickInAir is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=In
                       then extraSpeed + playerBoostSpeed
                       else extraSpeed
 
-  in (gs, p{pos=pos', state=state', extraSpeed=extraSpeed'})
-tickInAir _ _ _ _ =
+  in p{pos=pos', state=state', extraSpeed=extraSpeed'}
+tickInAir _ _ _ =
   error "Player is not InAir"
 
-tickDropping :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickDropping _ gs _ p@Player{pos=pos, state=Dropping droppingTicks} =
+tickDropping :: InputState -> GameState -> Player -> Player
+tickDropping _ gs p@Player{pos=pos, state=Dropping droppingTicks} =
   let droppingTicks' = droppingTicks + 1
-  in ( gs
-     , p{ pos=pos + V2 0 playerDropSpeed
-        , state=Dropping droppingTicks' } )
-tickDropping _ _ _ _ =
+  in p{ pos=pos + V2 0 playerDropSpeed
+      , state=Dropping droppingTicks' }
+tickDropping _ _ _ =
   error "Player not Dropping"
 
-testGameOver :: Player -> GameState -> Id -> GameState
-testGameOver Player{state=(Dropping droppingTicks)} gs pid = applyGameOver (droppingTicks > playerGameOver) gs pid
-testGameOver Player{state=(InAir (PlayerInAir fallingTicks _))} gs pid = applyGameOver (fallingTicks > playerGameOver) gs pid
-testGameOver _ gs _ = gs
+testGameOver :: Player -> Bool
+testGameOver Player{state=(Dropping droppingTicks)} = droppingTicks > playerGameOver
+testGameOver Player{state=(InAir (PlayerInAir fallingTicks _))} = fallingTicks > playerGameOver
+testGameOver _ = False
 
-applyGameOver :: Bool -> GameState -> Id -> GameState
-applyGameOver False gs _ = gs
-applyGameOver True gs i = gs{gsEntities = replaceId i (eWrap nGameStart) (gsEntities gs)}
-  where nGameStart = eWrap $ gameStart (eWrap player)
-
-
-tickOnGround :: InputState -> GameState -> Id -> Player -> (GameState, Player)
-tickOnGround is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=OnGround} =
+tickOnGround :: InputState -> GameState -> Player -> Player
+tickOnGround is gs p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=OnGround} =
   let (V2 inputX _) = isDirection is
       box = eBox p
 
@@ -157,8 +152,8 @@ tickOnGround is gs _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state
         | isJump is = InAir (PlayerInAir (-playerJumpTime) True)
         | offEdge   = InAir (PlayerInAir 1 True)
         | otherwise = OnGround
-  in (gs, p{pos=pos', state=state'})
-tickOnGround _ _ _ _ =
+  in p{pos=pos', state=state'}
+tickOnGround _ _ _ =
   error "Player not OnGround"
 
 collideWithScenery :: IsEntity o => o -> Player -> Player
