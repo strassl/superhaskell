@@ -1,6 +1,5 @@
 module Superhaskell.Processing (tickGameState, gravity, tps, viewPort) where
 
-import qualified Data.Map.Strict              as Map
 import           Control.Lens
 import           Linear.V2
 import           Superhaskell.Data.Entities
@@ -44,29 +43,15 @@ tickEntities is startGs =
               (gsEntities startGs)
 
 collideEntities :: GameState -> GameState
-collideEntities gs =
-  let entities = foldrWithId f Map.empty (gsEntities gs)
-                   where f eid e m = foldr (g eid e) m [minBound..]
-                         g eid e cg m =
-                           if collidesWith cg (eCollisionGroup e)
-                             then Map.insertWith (\[n] o -> n:o) cg [(eid, e)] m
-                             else m 
-  in foldrWithId (\sid s gs ->
-                    let (gs', s') = applyCollisions gs sid s (collideEntity entities s)
-                    in gs'{gsEntities=replaceId sid s' (gsEntities gs')})
-                 gs
-                 (gsEntities gs)
-
--- | Finds collitions with an entity.
-collideEntity :: Map.Map CollisionGroup [(Id, Entity)] -> Entity -> [(Id, Entity)]
-collideEntity others e = filter (boxOverlaps (eBox e) . eBox . snd)
-                                (Map.findWithDefault [] (eCollisionGroup e) others)
-
--- | Applys all collitions to a given subject with all given objects.
-applyCollisions :: GameState -> Id -> Entity -> [(Id, Entity)] -> (GameState, Entity)
-applyCollisions gs eid e = foldr (applyCollision eid) (gs, e)
-
--- | Applys the collision and is supposed to return an updated version of the
--- subject entity. The second entity is the object entity.
-applyCollision :: Id -> (Id, Entity) -> (GameState, Entity) -> (GameState, Entity)
-applyCollision eid (oid, other) (gs, e) = eCollide oid other gs eid e
+collideEntities startGs =
+  let collisions = [ (fst es, fst os)
+                   | es <- foldrWithId (\i e es -> (i,e):es) [] (gsEntities startGs)
+                   , os <- foldrWithId (\i e es -> (i,e):es) [] (gsEntities startGs)
+                   , any (`elem` (eCollisionGroups $ snd os)) (eCollidesWith $ snd es)
+                   , boxOverlaps (eBox $ snd es) (eBox $ snd os) ]
+  in foldl (\gs (eid, oid) ->
+              case (findId eid (gsEntities gs), findId oid (gsEntities gs)) of
+                (Just e, Just o) -> foldl (flip applyCommand) gs (eCollide gs oid o eid e)
+                _ -> gs)
+           startGs
+           collisions

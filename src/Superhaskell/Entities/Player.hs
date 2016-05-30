@@ -9,13 +9,12 @@ module Superhaskell.Entities.Player (
 import           Control.DeepSeq
 import           GHC.Generics
 import           Linear
-import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
 import           Superhaskell.Data.InputState
 import           Superhaskell.Data.RenderList
+import           Superhaskell.Entities.GameStart
 import           Superhaskell.Math
 import           Superhaskell.Processing
-import           Superhaskell.Entities.GameStart
 
 -- Controlled speed in units/tick.
 playerManualSpeed :: Float
@@ -66,7 +65,8 @@ data PlayerInAir = PlayerInAir { fallingTicks :: Float
                  deriving (Show, Generic, NFData)
 
 instance IsEntity Player where
-  eCollisionGroup _ = PlayerCGroup
+  eCollisionGroups _ = [PlayerCGroup]
+  eCollidesWith _ = [SceneryCGroup]
 
   eBox p = Box (pos p) (V2 0.72463768115942028986 1)
 
@@ -89,14 +89,13 @@ instance IsEntity Player where
     in if testGameOver p''
       then eWrap $ gameStart (eWrap player)
       else eWrap p''
-        
-  eCollide _ other gs _ p =
-    case eCollisionGroup other of
-      SceneryCGroup -> (gs, collideWithScenery other p)
-      _ -> (gs, p)
+
+  eCollide = simpleCollide $ \_ cg other p -> case cg of
+    SceneryCGroup -> collideWithScenery other p
+    _ -> p
 
 tickInAir :: InputState -> GameState -> Player -> Player
-tickInAir is gs p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
+tickInAir is _ p@Player{pos=pos, speed=speed, extraSpeed=extraSpeed, state=InAir state} =
   let PlayerInAir{fallingTicks=fallingTicks, canBoost=canBoost} = state
       (V2 inputX _) = isDirection is
 
@@ -124,7 +123,7 @@ tickInAir _ _ _ =
   error "Player is not InAir"
 
 tickDropping :: InputState -> GameState -> Player -> Player
-tickDropping _ gs p@Player{pos=pos, state=Dropping droppingTicks} =
+tickDropping _ _ p@Player{pos=pos, state=Dropping droppingTicks} =
   let droppingTicks' = droppingTicks + 1
   in p{ pos=pos + V2 0 playerDropSpeed
       , state=Dropping droppingTicks' }

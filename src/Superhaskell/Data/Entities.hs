@@ -16,9 +16,9 @@ module Superhaskell.Data.Entities (
 ) where
 
 import           Control.DeepSeq
-import           GHC.Generics
 import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
+import           GHC.Generics
 
 newtype Id = Id Int deriving (Show, Eq)
 

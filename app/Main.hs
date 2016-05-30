@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Superhaskell.Game
-import System.Console.GetOpt
-import System.Environment
+import           Superhaskell.Game
+import           System.Console.GetOpt
+import           System.Environment
 
 data Flag = Debug | Bench deriving (Show, Eq)
 

@@ -3,8 +3,8 @@
 {-# LANGUAGE GADTs          #-}
 module Superhaskell.Data.GameState (
     GameState(..), simpleTick, entitiesAt, entitiesAtInGroup, toRenderList, applyCommand
-  , GenState(..), initialGenState -- TODO remove initialGenState
-  , CollisionGroup(..), collidesWith
+  , GenState(..), initialGenState
+  , CollisionGroup(..), simpleCollide
   , IsEntity(..), Entity, Entities
   , UpdateCommand(..), UpdateList
 ) where
@@ -21,15 +21,17 @@ import           Superhaskell.Math
 class (Show e, NFData e) => IsEntity e where
   eTick :: InputState -> GameState -> Id -> e -> UpdateList
   eRender :: GameState -> Id -> e -> KeyFrames
-  eCollide :: IsEntity o => Id -> o -> GameState -> Id -> e -> (GameState, e)
-  eCollisionGroup :: e -> CollisionGroup
+  eCollide :: IsEntity o => GameState -> Id -> o -> Id -> e -> UpdateList
+  eCollisionGroups :: e -> [CollisionGroup]
+  eCollidesWith :: e -> [CollisionGroup]
   eBox :: e -> Box
   eWrap :: e -> Entity
 
   eTick _ _ _ _ = []
   eRender _ _ _ = []
-  eCollide _ _ gs _ e = (gs, e)
-  eCollisionGroup _ = NilCGroup
+  eCollide _ _ _ _ _ = []
+  eCollisionGroups _ = []
+  eCollidesWith _ = []
   eBox _ = Box (V2 0 0) (V2 0 0)
   eWrap = Entity
 
@@ -46,14 +48,19 @@ instance NFData Entity where
 instance IsEntity Entity where
   eTick is gs eid (Entity e) = eTick is gs eid e
   eRender gs eid (Entity e) = eRender gs eid e
-  eCollide oid other gs eid (Entity e) = let (gs', e') = eCollide oid other gs eid e in (gs', Entity e')
-  eCollisionGroup (Entity e) = eCollisionGroup e
+  eCollide gs oid o eid (Entity e) = eCollide gs oid o eid e
+  eCollisionGroups (Entity e) = eCollisionGroups e
+  eCollidesWith (Entity e) = eCollidesWith e
   eBox (Entity e) = eBox e
   eWrap = id
 
-
 simpleTick :: (IsEntity e1, IsEntity e2) => (InputState -> GameState -> e1 -> e2) -> InputState -> GameState -> Id -> e1 -> UpdateList
 simpleTick tick is gs eid e = [UpdateId eid (Just $ eWrap $ tick is gs e)]
+
+simpleCollide :: (IsEntity e, IsEntity o) => (GameState -> CollisionGroup -> o -> e -> e) -> GameState -> Id -> o -> Id -> e -> UpdateList
+simpleCollide collide gs _ o eid e =
+  let relevantCgs = filter (`elem` eCollidesWith e) (eCollisionGroups o)
+  in [UpdateId eid (Just $ eWrap $ foldl (\e cg -> collide gs cg o e) e relevantCgs)]
 
 type Entities = EntitiesC Entity
 
@@ -72,13 +79,7 @@ applyCommand (ResetGame player viewport) gs = gs{gsGenState=initialGenState, gsE
 
 data CollisionGroup = PlayerCGroup
                     | SceneryCGroup
-                    | BackgroundCGroup
-                    | NilCGroup
                     deriving (Show, Generic, NFData, Eq, Enum, Bounded, Ord)
-
-collidesWith :: CollisionGroup -> CollisionGroup -> Bool
-collidesWith PlayerCGroup SceneryCGroup = True
-collidesWith _ _ = False
 
 data GameState = GameState { gsEntities :: Entities
                            , gsRunning  :: Bool
@@ -87,7 +88,7 @@ data GameState = GameState { gsEntities :: Entities
                            }
                deriving (Show, Generic, NFData)
 
-data GenState = GenState { genBound     :: Float
+data GenState = GenState { genBound :: Float
                          }
                deriving (Show, Generic, NFData)
 
@@ -101,7 +102,7 @@ entitiesAt :: V2 Float -> GameState -> [Entity]
 entitiesAt p gs = foldr (\e es -> if boxContains p (eBox e) then e:es else es) [] (gsEntities gs)
 
 entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
-entitiesAtInGroup p g gs = filter ((== g) . eCollisionGroup) (entitiesAt p gs)
+entitiesAtInGroup p g gs = filter ((g `elem`) . eCollisionGroups) (entitiesAt p gs)
 
 toRenderList :: Float -> GameState -> RenderList
 toRenderList time gs = concatMap (applyAnimation time) $ mapWithId (eRender gs) (gsEntities gs)

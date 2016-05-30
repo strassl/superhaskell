@@ -17,11 +17,12 @@ import           Superhaskell.Entities.ScoreCounter
 import           Superhaskell.Generation
 import           Superhaskell.Math
 import           Superhaskell.Processing
-import           Superhaskell.SDL.Init          (initSDL)
-import           Superhaskell.SDL.Input         (SDLInputState, getInputState)
-import           Superhaskell.SDL.Rendering     (SDLRenderingState,
-                                                 executeRenderList)
-import qualified System.Clock                   as C
+import           Superhaskell.SDL.Init              (initSDL)
+import           Superhaskell.SDL.Input             (SDLInputState,
+                                                     getInputState)
+import           Superhaskell.SDL.Rendering         (SDLRenderingState,
+                                                     executeRenderList)
+import qualified System.Clock                       as C
 import           Text.Printf
 
 data RenderLoopState = RenderLoopState { rlsGameStateBox  :: IORef GameState

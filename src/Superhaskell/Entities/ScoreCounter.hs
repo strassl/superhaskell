@@ -4,7 +4,7 @@
 module Superhaskell.Entities.ScoreCounter (ScoreCounter, scoreCounter) where
 
 import           Control.DeepSeq
-import           Data.Text (Text, snoc)
+import           Data.Text                    (Text, snoc)
 import           GHC.Generics
 import           Linear
 import           Superhaskell.Data.Entities
@@ -16,7 +16,6 @@ data ScoreCounter = ScoreCounter (V2 Float) deriving (Show, Generic, NFData)
 
 instance IsEntity ScoreCounter where
   eBox (ScoreCounter _ ) = Box (V2 0 0) (V2 0 0)
-  eCollisionGroup _ = NilCGroup
   eRender gs _ (ScoreCounter offset) = [KeyFrame (scoreToRenderList offsetAnchor (round score)) 1]
     where score = left $ eBox player
           player = esPlayer $ gsEntities gs

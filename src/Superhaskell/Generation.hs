@@ -15,10 +15,10 @@ import           Data.Function                  (on)
 import           Linear.V2
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
+import           Superhaskell.Entities.Cloud
 import           Superhaskell.Entities.Platform
 import           Superhaskell.Math
-import Superhaskell.Processing
-import Superhaskell.Entities.Cloud
+import           Superhaskell.Processing
 
 newtype T4 a b c d = T4 (a, b, c, d)
 instance (Random a, Random b, Random c, Random d) => Random (T4 a b c d) where
@@ -70,7 +70,7 @@ updateLevel gs@GameState{gsEntities = es, gsViewPort = vp@(Box (V2 vpl _) _)} = 
 
 prune :: Float -> Entities -> Entities
 prune vpleft = filterOthers shouldKeep
-    where shouldKeep e = not (isLeftOfViewport vpleft e) || eCollisionGroup e `notElem` prunableGroups
+    where shouldKeep e = not (isLeftOfViewport vpleft e) || all (`notElem` prunableGroups) (eCollisionGroups e)
 
 -- TODO correct height
 -- We partition the world (horizontally) into partitionWidth wide sections (at least 1)
