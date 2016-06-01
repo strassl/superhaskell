@@ -7,7 +7,7 @@ module Superhaskell.Data.Entities (
   , esPlayer
   , filterOthers
   , appendOthers
-  , foldrWithId
+  , foldlWithId'
   , mapWithId
   , replaceId
   , insertOther
@@ -16,6 +16,7 @@ module Superhaskell.Data.Entities (
 ) where
 
 import           Control.DeepSeq
+import           Data.Foldable
 import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import           GHC.Generics
@@ -34,9 +35,9 @@ instance Functor EntitiesC where
 instance Traversable EntitiesC where
   traverse f (EntitiesC nextId elem0 m) = EntitiesC nextId <$> f elem0 <*> traverse f m
 
-foldrWithId :: (Id -> a -> b -> b) -> b -> EntitiesC a -> b
-foldrWithId f zero (EntitiesC _ elem0 m) =
-  f (Id 0) elem0 (M.foldrWithKey (\k e acc -> f (Id k) e acc) zero m)
+foldlWithId' :: (b -> Id -> a -> b) -> b -> EntitiesC a -> b
+foldlWithId' f zero (EntitiesC _ elem0 m) =
+  f (M.foldlWithKey' (\acc k e -> f acc (Id k) e) zero m) (Id 0) elem0
 
 mapWithId :: (Id -> a -> b) -> EntitiesC a -> EntitiesC b
 mapWithId f (EntitiesC nextId elem0 m) =
@@ -49,7 +50,7 @@ insertOther :: a -> EntitiesC a -> EntitiesC a
 insertOther e (EntitiesC nextId elem0 m) = EntitiesC (nextId + 1) elem0 (M.insert nextId e m)
 
 appendOthers :: Foldable t => t a -> EntitiesC a -> EntitiesC a
-appendOthers ts es = foldr insertOther es ts
+appendOthers ts es = foldl' (flip insertOther) es ts
 
 makeEntities :: a -> EntitiesC a
 makeEntities player = EntitiesC 1 player M.empty

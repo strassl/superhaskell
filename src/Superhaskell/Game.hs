@@ -157,7 +157,7 @@ tickTime :: Float
 tickTime = 1 / tps
 
 iterateTimesM :: Monad m => Int -> (a -> m a) -> a -> m a
-iterateTimesM iterations f init = foldrM (const f) init [1..iterations]
+iterateTimesM iterations f init = foldlM (flip $ const f) init [1..iterations]
 
 tickGame :: RandomGen g => InputState -> GameState -> Rand g GameState
 tickGame is gs = fmap (tickGameState is) (updateWorld gs)

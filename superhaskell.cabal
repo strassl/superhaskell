@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  ghc-options:         -Wall -fno-warn-name-shadowing
+  ghc-options:         -Wall -fno-warn-name-shadowing -rtsopts -with-rtsopts=-N
   exposed-modules:     Superhaskell.Game
   other-modules:       Superhaskell.Data.GameState
                      , Superhaskell.Data.InputState

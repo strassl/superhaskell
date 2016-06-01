@@ -1,6 +1,7 @@
 module Superhaskell.Processing (tickGameState, gravity, tps, viewPort) where
 
 import           Control.Lens
+import           Data.Foldable
 import           Linear.V2
 import           Superhaskell.Data.Entities
 import           Superhaskell.Data.GameState
@@ -35,23 +36,23 @@ moveViewPort gs@GameState{gsViewPort = vp@(Box _ wh)} = gs{gsViewPort = withCent
 
 tickEntities :: InputState -> GameState -> GameState
 tickEntities is startGs =
-  foldrWithId (\eid _ gs ->
-                 case findId eid (gsEntities gs) of
-                   Just e ->  foldl (flip applyCommand) gs (eTick is gs eid e)
-                   Nothing -> gs)
-              startGs
-              (gsEntities startGs)
+  foldlWithId' (\gs eid _ ->
+                  case findId eid (gsEntities gs) of
+                    Just e ->  foldl' (flip applyCommand) gs (eTick is gs eid e)
+                    Nothing -> gs)
+               startGs
+               (gsEntities startGs)
 
 collideEntities :: GameState -> GameState
 collideEntities startGs =
   let collisions = [ (fst es, fst os)
-                   | es <- foldrWithId (\i e es -> (i,e):es) [] (gsEntities startGs)
-                   , os <- foldrWithId (\i e es -> (i,e):es) [] (gsEntities startGs)
+                   | es <- foldlWithId' (\es i e -> (i,e):es) [] (gsEntities startGs)
+                   , os <- foldlWithId' (\es i e -> (i,e):es) [] (gsEntities startGs)
                    , any (`elem` (eCollisionGroups $ snd os)) (eCollidesWith $ snd es)
                    , boxOverlaps (eBox $ snd es) (eBox $ snd os) ]
-  in foldl (\gs (eid, oid) ->
+  in foldl' (\gs (eid, oid) ->
               case (findId eid (gsEntities gs), findId oid (gsEntities gs)) of
-                (Just e, Just o) -> foldl (flip applyCommand) gs (eCollide gs oid o eid e)
+                (Just e, Just o) -> foldl' (flip applyCommand) gs (eCollide gs oid o eid e)
                 _ -> gs)
            startGs
            collisions

@@ -11,6 +11,7 @@ module Superhaskell.Data.GameState (
 
 import           Control.DeepSeq
 import           Data.Fixed
+import           Data.Foldable
 import           GHC.Generics
 import           Linear.V2                    (V2 (..))
 import           Superhaskell.Data.Entities
@@ -99,7 +100,7 @@ initialGenState = GenState { genBound = 0.0
                            }
 
 entitiesAt :: V2 Float -> GameState -> [Entity]
-entitiesAt p gs = foldr (\e es -> if boxContains p (eBox e) then e:es else es) [] (gsEntities gs)
+entitiesAt p gs = foldl' (\es e -> if boxContains p (eBox e) then e:es else es) [] (gsEntities gs)
 
 entitiesAtInGroup :: V2 Float -> CollisionGroup -> GameState -> [Entity]
 entitiesAtInGroup p g gs = filter ((g `elem`) . eCollisionGroups) (entitiesAt p gs)

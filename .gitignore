@@ -19,3 +19,6 @@ cabal.sandbox.config
 
 # IntelliJ
 .idea
+
+# OS X
+.DS_Store
