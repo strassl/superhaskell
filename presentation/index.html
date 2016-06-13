@@ -192,7 +192,6 @@ eCloudTick :: InputState -> GameState -> Cloud -> Cloud
 data Platform = Platform PlatformData
 ePlatformTick :: InputState -> GameState -> Platform -> Platform
 
-
 data GameState = GameState { gsEntities :: [???], ... }
 ```
 
@@ -255,10 +254,11 @@ eTick :: InputState -> GameState -> e -> UpdateList
 		<section data-markdown>
 		<script type="text/template">
 ## The ugly
-* Inkonsistenter GameState für eTick:
+* Inkonsistenter `GameState` für `eTick`:
     * Die `UpdateList` von jedem `eTick` wird sofort angewendet!
     * Nur der 1. Entity sieht eine konsistente Welt
 * Dito für Kollissionen
+* YouTube: "John Carmack's keynote at Quakecon 2013 part 4"
 		</script>
 		</section>
 
