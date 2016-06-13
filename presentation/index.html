@@ -4,13 +4,14 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>Superhaskell</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
+		<link rel="stylesheet" href="css/theme/sky.css">
 
 		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="lib/css/zenburn.css">
+		<link rel="stylesheet" href="lib/css/github.css">
+
 
 		<!-- Printing and PDF exports -->
 		<script>
@@ -21,72 +22,327 @@
 			document.getElementsByTagName( 'head' )[0].appendChild( link );
 		</script>
 	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section data-markdown>
-					<script type="text/template">
+<body>
+<div class="reveal">
+<div class="slides">
+	<section data-markdown>
+	<script type="text/template">
 # Superhaskell
 
 ![Bunny](../assets/textures/bunny1_jump.png)
-					</script>
-				</section>
+	</script>
+	</section>
+	
+	<section data-markdown>
+	<script type="text/template">
+## Features
+* 2D-Runner
+* Jump, Boost, Drop
+* Keyboard, Controller
+* Endlos generiertes Level
+	</script>
+	</section>
 
-				<section data-markdown>
-					<script type="text/template">
-## Superhaskell
-
-$Description here$
-					</script>
-				</section>
-
-				<section data-markdown>
-					<script type="text/template">
-## Architecture
-					</script>
-				</section>
-
-				<section data-markdown>
-					<script type="text/template">
-## Lessons learned
-					</script>
-				</section>
-
-				<section data-markdown>
-					<script type="text/template">
+	<section>
+		<section data-markdown>
+		<script type="text/template">
 ## Demo
-					</script>
-				</section>
+		</script>
+		</section>
+		<section data-markdown>
+		<script type="text/template">
+![Screenshot](img/screen.png)
+		</script>
+		</section>
+	</section>
 
-				<section data-markdown>
-					<script type="text/template">
-## Haskell
+
+<!-- Architektur -->
+
+
+	<section>
+		<section data-markdown>
+		<script type="text/template">
+## Architektur
+
+		</script>
+		</section>
+		
+		<section data-markdown>
+		<script type="text/template">
+## Very High-Level
 
 ```haskell
-f :: a -> a
-f x = x
+run :: IO ()
+run = do
+  sdlState <- initSDL
+  inputStateBox <- newIORef defaultInputState
+  gameStateBox <- newIORef initialGameState
+
+  forkIO $ runGameLoop inputStateBox gameStateBox
+  runRenderLoop sdlState inputStateBox gameStateBox
 ```
-					</script>
-				</section>
-			</div>
-		</div>
 
-		<script src="lib/js/head.min.js"></script>
-		<script src="js/reveal.js"></script>
-
-		<script>
-			// More info https://github.com/hakimel/reveal.js#configuration
-			Reveal.initialize({
-				history: true,
-
-				// More info https://github.com/hakimel/reveal.js#dependencies
-				dependencies: [
-					{ src: 'plugin/markdown/marked.js' },
-					{ src: 'plugin/markdown/markdown.js' },
-					{ src: 'plugin/notes/notes.js', async: true },
-					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
-				]
-			});
 		</script>
-	</body>
+		</section>
+		
+
+		<section data-markdown>
+		<script type="text/template">
+## Game Loop
+
+Eingaben lesen
+```haskell
+inputState <- atomicRead inputStateBox
+```
+Game-State ticken
+```haskell
+tickGame :: RandomGen g => InputState -> GameState -> Rand g GameState
+```
+Neuen Game-State schreiben
+```haskell
+gameState `deepseq` atomicWrite gameStateBox gameState
+```
+		</script>
+		</section>
+
+		<section data-markdown>
+		<script type="text/template">
+## Render Loop
+Input-State updaten und schreiben
+```haskell
+getInputState :: SDLInputState -> InputState -> IO InputState
+inputState `deepseq` atomicWrite inputStateBox inputState
+```
+Game-State lesen und rendern
+```haskell
+gameState <- atomicRead gameStateBox
+toRenderList :: GameState -> RenderList
+executeRenderList :: SDLRenderingState -> RenderList -> IO ()
+```
+		</script>
+		</section>
+	</section>
+	
+	
+	<!-- Logik -->
+	
+	
+	<section>
+		<section data-markdown>
+		<script type="text/template">
+## Logik
+* Welt generieren/zerstören
+* Entities ticken
+* Entities kollidieren
+		</script>
+		</section>
+		
+		<section data-markdown>
+		<script type="text/template">
+## Entities
+
+* Zum Beispiel
+    * Player
+    * Platform
+    * Cloud
+    * ...
+* Problem: Collection von allen Entities benötigt!
+```haskell
+GameState { gsEntities :: [Entity], ... }
+```
+
+		</script>
+		</section>
+		
+		<section data-markdown data>
+		<script type="text/template">
+## Entities
+#### Summentyp
+
+```haskell
+type Entity = Player PlayerData
+            | Cloud CloudData
+            | Platform PlatformData
+
+eTick :: Entity -> Entity
+eTick :: InputState -> GameState -> e -> e
+eTick is gs (Player d) = ...
+eTick is gs (Cloud d) = ...
+eTick is gs (Platform d) = ...
+
+data GameState = GameState { gsEntities :: [Entity], ... }
+```
+
+		</script>
+		</section>
+
+		<section data-markdown data>
+		<script type="text/template">
+## Entities
+#### Unterschiedliche Typen
+
+```haskell
+data Player = Player PlayerData
+ePlayerTick :: InputState -> GameState -> Player -> Player
+
+data Cloud = Cloud CloudData
+eCloudTick :: InputState -> GameState -> Cloud -> Cloud
+
+data Platform = Platform PlatformData
+ePlatformTick :: InputState -> GameState -> Platform -> Platform
+
+
+data GameState = GameState { gsEntities :: [???], ... }
+```
+
+		</script>
+		</section>
+		
+		<section data-markdown>
+		<script type="text/template">
+## Entities
+#### GADTs
+
+```haskell
+class IsEntity e where
+  eTick :: InputState -> GameState -> e -> e
+  eTick _ _ e = e
+  eWrap :: e -> Entity
+  eWrap = Entity
+
+data Entity where
+  Entity :: IsEntity e => e -> Entity -- !!!
+instance IsEntity Entity where ...
+
+data Player = Player PlayerData
+instance IsEntity Player where ...
+
+data Cloud = Cloud CloudData
+instance IsEntity Cloud where ...
+
+data GameState = GameState { gsEntities :: [Entity], ... }
+```
+		</script>
+		</section>
+
+
+		<section data-markdown>
+		<script type="text/template">
+## Entities
+#### The Reality
+
+```haskell
+eTick :: InputState -> GameState -> e -> e
+```
+
+* Zu simpel, Ticks müssen:
+    * Entities spawnen/löschen/ersetzen
+    * GameState begrenzt ändern (z.B. Game-Over)
+* Stattdessen: Explizit Update-Commands
+```haskell
+eTick :: InputState -> GameState -> e -> UpdateList
+```
+		</script>
+		</section>
+	</section>
+
+	
+	<!-- The ugly -->
+	
+	
+	<section>
+		<section data-markdown>
+		<script type="text/template">
+## The ugly
+* Inkonsistenter GameState für eTick:
+    * Die `UpdateList` von jedem `eTick` wird sofort angewendet!
+    * Nur der 1. Entity sieht eine konsistente Welt
+* Dito für Kollissionen
+		</script>
+		</section>
+
+		<section data-markdown>
+		<script type="text/template">
+## The ugly
+* Wie findet man den passenden Kollission-Handler?
+    * Dynamisches Binden über Parameter?
+    * Patternmatching über Summentypen?
+    * `instanceof`?
+    * Tags?
+* In OOP auch keine Lösung für das Problem (?)
+		</script>
+		</section>
+	</section>
+	
+	
+	<!-- Resume pro -->
+
+
+	<section>
+		<section data-markdown>
+		<script type="text/template">
+## Résumé<br>☺️
+* Type safety
+	* Refactor Fallout sehr gering bzw. leicht zu finden
+	* Sehr wenige Runtime Errors
+* Purity
+	* Threading sehr einfach
+	* Neustart = GameState mit initialem ersetzen
+		</script>
+		</section>
+		
+	</section>
+	
+	
+	<!-- Resume con -->
+	
+	<section>
+		<section data-markdown>
+		<script type="text/template">
+## Résumé<br>☹
+
+* Refactoring/IDE Support
+* Windows Support (native Libraries!)
+* Extension Pragmas
+* Modulsystem
+* Lesbarkeit (?)
+		</script>
+		</section>
+	</section>
+</div>
+</div>
+
+<script src="lib/js/head.min.js"></script>
+<script src="js/reveal.js"></script>
+
+<script>
+	// More info https://github.com/hakimel/reveal.js#configuration
+	Reveal.initialize({
+		history: true,
+
+                // Parallax background image
+                parallaxBackgroundImage: 'img/bg.png',
+
+                // Parallax background size
+                parallaxBackgroundSize: '3840px 2160px',
+
+                // Number of pixels to move the parallax background per slide
+                // - Calculated automatically unless specified
+                // - Set to 0 to disable movement along an axis
+                parallaxBackgroundHorizontal: 200,
+                parallaxBackgroundVertical: 50,
+
+
+		// More info https://github.com/hakimel/reveal.js#dependencies
+		dependencies: [
+			{ src: 'plugin/markdown/marked.js' },
+			{ src: 'plugin/markdown/markdown.js' },
+			{ src: 'plugin/notes/notes.js', async: true },
+			{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+		]
+                
+	});
+</script>
+</body>
 </html>
