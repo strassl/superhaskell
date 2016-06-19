@@ -147,7 +147,7 @@ executeRenderList :: SDLRenderingState -> RenderList -> IO ()
     * Platform
     * Cloud
     * ...
-* Problem: Collection von allen Entities benötigt!
+* Collection von allen Entities benötigt
 ```haskell
 GameState { gsEntities :: [Entity], ... }
 ```
@@ -165,8 +165,7 @@ type Entity = Player PlayerData
             | Cloud CloudData
             | Platform PlatformData
 
-eTick :: Entity -> Entity
-eTick :: InputState -> GameState -> e -> e
+eTick :: InputState -> GameState -> Entity -> Entity
 eTick is gs (Player d) = ...
 eTick is gs (Cloud d) = ...
 eTick is gs (Platform d) = ...
