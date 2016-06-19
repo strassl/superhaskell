@@ -1,0 +1,79 @@
+Intro & Demo
+    Simon
+
+Architektur
+High-Level
+    Michael
+        Zwei unabhängige Threads
+        Kommunikation nur über die 2 IORefs
+        Was ist ein IORef
+
+Game-Loop
+    Simon
+        Was macht tickGame genau spaeter (entities updaten, random wegen Generierung)
+        deepseq damit alles evaluiert damit computation in diesem Thread
+        GameOver super easy
+
+Render-Loop
+    Michael
+        Muss den Input vom Fenster abholen
+        Liest danach den GameState
+        GameState to RenderList to SDL (IO)
+        Exkurs in den Renderer
+        Data.StateVar $=
+
+Logik
+High-Level
+    Simon
+        Generierung (how it works)
+
+Entities
+    Simon
+        Alles sind Entities (auch UI Elemente)
+        Ticken Beispiele (Player, Clouds)
+        Problem erklaeren (Liste von Entities, jede Entity muss ticken)
+
+Summentyp
+    Simon
+        Mit vielen Entities sehr lange
+        Riesige Routing Funktion?
+        Mehrere solche Funktione (render, tick, collide - quadratisch, ...) - Unuebersichtlich
+
+Unterschiedliche Typen
+    Michael
+        Aufgrund der Einschränkungen unschöne lösung "Master Import/Master Modul/keine Seperation"
+        Daher Trennung der Entities in unterschiedliche Typen
+        -> schöne getrennte Funktionen
+        -> Problem mit der Liste, tick Funktion???
+
+GADTs
+    Michael
+        Lösung: Typeklasse IsEntity um über ein gemeinsames Interface zu abstrahieren
+        GADTs um einen Entity Typen zu machen "Box" um die inhomogene Liste anlegen zu können
+        Existential Types hätten hier strenggenommen gereicht
+        "Dynamisches Binden"
+
+Reality
+    Simon
+        Entity kann sich so nur selber aender
+        Ganzen GameState aendern?!
+        Vorteil UpdateList: Reasoning moeglich (merge conflicts, etc.), restrictions, keine direkten Aenderungen am GameState
+
+The Ugly
+The Ugly
+    Michael
+        Inkonsistenter GameState weil UpdateLists sofort angewendet
+        Weil andere Entities änderbar sind
+        Kollission Beispiel
+        Zwei Entities Colliden, der erste Collission Handler resolved die Kollission
+        aber der zweite wird noch immer Aufgerufen obwohl es keine Kollission mehr gibt???
+        Es gibt Lösungen -> Carmack Talk
+        Spiel zu einfach als das sich das Problem Manifestiert
+        -> ansonsten extrem schweres Reasoning
+
+Kollission Handling
+    Michael
+        "Lösugnen" in anderen Programmiersprachen
+        echte Multimethoden
+
+Résumé
