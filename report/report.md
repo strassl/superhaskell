@@ -4,7 +4,7 @@
 
 *Simon Strassl eXXXXXXX (033534)*
 
-= Superhaskell
+# Superhaskell
 
 TODO TODO TODO insert screenshot here
 
@@ -25,7 +25,7 @@ unterschiedlichem Abstand.
 Die Grafiken wurde nicht selber angefertigt. Statdessen wurden frei verfügbare
 Grafiken von http://kenney.nl/ verwendet.
 
-== Architektur
+## Architektur
 
 Prinzipiell besteht die Anwendung aus zwei großen Teilen: Einem Thread, der sich
 um das Rendering des Spielzustandes kümmert, und ein Thread, der sich um das
@@ -45,7 +45,7 @@ run = do
   runRenderLoop sdlState inputStateBox gameStateBox
 ```
 
-=== Rendering
+### Rendering
 
 Das Rendering ist mittels der SDL2-Library und OpenGL umgesetzt, für die es Bindings für
 Haskell gibt. Prinzipiell ist der Rendering-Code nichts außergewöhnliches und
@@ -68,7 +68,7 @@ toRenderList :: GameState -> RenderList
 executeRenderList :: SDLRenderingState -> RenderList -> IO ()
 ```
 
-=== Level-Generation
+### Level-Generation
 
 Die Level-Generation erzeugt einerseits rechts vom aktuellen Viewport neue
 Objekte im Level und andererseits zerstört sie Objecte, die den Viewport
@@ -80,8 +80,8 @@ Technisch ist das mithilfe des `Rand`-Monad umgesetzt. Das hat es uns erlaubt
 dieses Modul pur zu implementieren aber trotzdem Zugriff auf Zufallszahlen
 zu haben.
 
-=== Game-Loop
+### Game-Loop
 
-=== Entities
+### Entities
 
 GATDs
