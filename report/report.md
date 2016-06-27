@@ -127,7 +127,7 @@ eTick is gs (Platform d) = tickPlatform is gs d
 #### GATDs
 
 Diese Lösung hat jedoch erfordert, dass es eine große "master"-Tick-Funktion gibt
-die zwischen allen Entities die im Spiel existieren. Insbesondere muss man diese
+die zwischen allen Entities die im Spiel existieren dispatched. Insbesondere muss man diese
 Funktion jedes mal anpassen, wenn ein neues Entity programmiert wird. Das ist
 bei einer kleinen Applikation wie unserer zwar kein Problem aber dennoch sehr
 unschön.
@@ -137,8 +137,8 @@ und jedes Entity Mitglied der Typklasse `IsEntity` gemacht. Dank der Haskell-Spr
 GADTs ist es möglich diese `IsEntity`-Typen in einen gemeinsamen Typ zusammenzufassen,
 ohne jeden konkreten Typen aufzählen zu müssen wie beim Summentypen.
 
-Diese Datentyp, `Entity`, ist vergleichbar mit einem Upcast in objektorientierten
-Sprachen, nur dass es keine Möglichkeit, ohne zu tricksen, gibt von `Entity`
+Dieser Datentyp, `Entity`, ist vergleichbar mit einem Upcast in objektorientierten
+Sprachen, nur, dass es keine Möglichkeit, ohne zu tricksen, gibt von `Entity`
 jemals wieder einen Downcast auf ein konkretes Entity zu schaffen.
 
 ```haskell
