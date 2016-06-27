@@ -98,18 +98,18 @@ Der Kern des Game-Loops besteht aus drei Elementen:
     * Entities kollidieren
 3. Schreiben des neuen GameStates in die IORef.
 
-Der resultierende GameState wird dann wieder als Input für die nächste Iteration des Loops verwendet.
-Ein schöner Nebeneffekt dieser Architektur ist, dass das Spiel jederzeit in einen beliebigen Zustand versetzt werden kann, indem einfach der jeweilige GameState retourniert wird (z.B. um einen Neustart zu bewirken muss lediglich der initiale GameState retourniert werden, alles andere geschieht von selbst).
+Der resultierende `GameState` wird dann wieder als Input für die nächste Iteration des Loops verwendet.
+Ein schöner Nebeneffekt dieser Architektur ist, dass das Spiel jederzeit in einen beliebigen Zustand versetzt werden kann, indem einfach der jeweilige `GameState` retourniert wird (z.B. um einen Neustart zu bewirken muss lediglich der initiale `GameState` retourniert werden, alles andere geschieht von selbst).
 
 ### Entities
 
-Jedes Element das auf dem Bildschirm angezeigt wird ist eine Entity (Spieler, Wolken, Score Counter, Plattformen, ...).
-Jede dieser Entities muss andere Daten speichern (der Spieler braucht z.B. eine Geschwindigkeit, die für die statischen Plattformen irrelevant ist) und hat anderes Verhalten, welches sich in einer unterschiedlichen tick Funktion äußert.
+Jedes Element das auf dem Bildschirm angezeigt wird ist eine Entity (Spieler, Wolken, Score Counter, Plattformen ...).
+Jede dieser Entities muss andere Daten speichern (der Spieler braucht z.B. eine Geschwindigkeit, die für die statischen Plattformen irrelevant ist) und hat anderes Verhalten, welches sich in einer unterschiedlichen tick-Funktion äußert.
 Dazu kommen dann noch unterschiedliche Rendering Funktionen, Collission Handler, usw.
 
 #### Summentyp
 
-Eine Möglichkeit dieses Problem zu lößen ist, einen einzigen großen Summentyp für alle Entities einzuführen.
+Eine Möglichkeit dieses Problem zu lösen ist, einen einzigen großen Summentyp für alle Entities einzuführen.
 ```haskell
 data Entity = Player PlayerData | Platform PlatformData | ...
 data GameState = GameState { gsEntities :: [Entity], ... }
@@ -125,6 +125,21 @@ eTick is gs (Platform d) = tickPlatform is gs d
 
 
 #### GATDs
+
+Diese Lösung hat jedoch erfordert, dass es eine große "master"-Tick-Funktion gibt
+die zwischen allen Entities die im Spiel existieren. Insbesondere muss man diese
+Funktion jedes mal anpassen, wenn ein neues Entity programmiert wird. Das ist
+bei einer kleinen Applikation wie unserer zwar kein Problem aber dennoch sehr
+unschön.
+
+Um dieses Problem zu lösen haben wir jedes Entity in ein eigenes Modul verschoben
+und jedes Entity Mitglied der Typklasse `IsEntity` gemacht. Dank der Haskell-Spracherweiterung
+GADTs ist es möglich diese `IsEntity`-Typen in einen gemeinsamen Typ zusammenzufassen,
+ohne jeden konkreten Typen aufzählen zu müssen wie beim Summentypen.
+
+Diese Datentyp, `Entity`, ist vergleichbar mit einem Upcast in objektorientierten
+Sprachen, nur dass es keine Möglichkeit, ohne zu tricksen, gibt von `Entity`
+jemals wieder einen Downcast auf ein konkretes Entity zu schaffen.
 
 ```haskell
 class IsEntity e where
