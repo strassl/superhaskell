@@ -91,12 +91,12 @@ zu haben.
 
 Der Kern des Game-Loops besteht aus drei Elementen:
 
-1. Das Lesen des aktuellen InputStates aus der IORef.
-2. Weiterticken des GameStates.
+1. Das Lesen des aktuellen `InputState`s aus der `IORef`.
+2. Weiterticken des `GameState`s.
     * Welt generieren/zerstören
     * Entities ticken
     * Entities kollidieren
-3. Schreiben des neuen GameStates in die IORef.
+3. Schreiben des neuen `GameState`s in die `IORef`.
 
 Der resultierende `GameState` wird dann wieder als Input für die nächste Iteration des Loops verwendet.
 Ein schöner Nebeneffekt dieser Architektur ist, dass das Spiel jederzeit in einen beliebigen Zustand versetzt werden kann, indem einfach der jeweilige `GameState` retourniert wird (z.B. um einen Neustart zu bewirken muss lediglich der initiale `GameState` retourniert werden, alles andere geschieht von selbst).
