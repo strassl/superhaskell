@@ -103,4 +103,45 @@ Ein schöner Nebeneffekt dieser Architektur ist, dass das Spiel jederzeit in ein
 
 ### Entities
 
-GATDs
+Jedes Element das auf dem Bildschirm angezeigt wird ist eine Entity (Spieler, Wolken, Score Counter, Plattformen, ...).
+Jede dieser Entities muss andere Daten speichern (der Spieler braucht z.B. eine Geschwindigkeit, die für die statischen Plattformen irrelevant ist) und hat anderes Verhalten, welches sich in einer unterschiedlichen tick Funktion äußert.
+Dazu kommen dann noch unterschiedliche Rendering Funktionen, Collission Handler, usw.
+
+#### Summentyp
+
+Eine Möglichkeit dieses Problem zu lößen ist, einen einzigen großen Summentyp für alle Entities einzuführen.
+```haskell
+data Entity = Player PlayerData | Platform PlatformData | ...
+data GameState = GameState { gsEntities :: [Entity], ... }
+```
+
+Die tick Funktion dispatched dann die jeweiligen Tick Funktionen.
+```haskell
+eTick :: InputState -> GameState -> Entity -> Entity
+eTick is gs (Player d) = tickPlayer is gs d
+eTick is gs (Platform d) = tickPlatform is gs d
+...
+```
+
+
+#### GATDs
+
+```haskell
+class IsEntity e where
+  eTick :: InputState -> GameState -> e -> e
+  eTick _ _ e = e
+  eWrap :: e -> Entity
+  eWrap = Entity
+
+data Entity where
+  Entity :: IsEntity e => e -> Entity -- !!!
+instance IsEntity Entity where ...
+
+data Player = Player PlayerData
+instance IsEntity Player where ...
+
+data Cloud = Cloud CloudData
+instance IsEntity Cloud where ...
+
+data GameState = GameState { gsEntities :: [Entity], ... }
+```
