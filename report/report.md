@@ -1,12 +1,19 @@
-*183.653 Methodisches, industrielles Software-Engineering mit Funktionalen Sprachen am Fallbeispiel Haskell*
+\title{
+Superhaskell \\
+\large 183.653 Methodisches, industrielles Software-Engineering mit Funktionalen Sprachen am Fallbeispiel Haskell
+}
 
-*Michael Kainer e1325106 (033534)*
+\author{
+Michael Kainer e1325106 (033534)
+\and
+Simon Strassl e1326936 (033534)
+}
 
-*Simon Strassl eXXXXXXX (033534)*
+\maketitle
 
 # Superhaskell
 
-TODO TODO TODO insert screenshot here
+![Screenshot](screen.png)
 
 Superhaskell ist ein 2D-Spiel, in dem man einen Hasen von links nach rechts
 durch ein prozedural generiertes Level steuern muss. Dabei gibt es keine
@@ -22,7 +29,7 @@ Die Möglichkeiten den Hasen zu steuern umfassen:
 Ein Level besteht aus Plattformen in unterschiedlicher Höhe und
 unterschiedlichem Abstand.
 
-Die Grafiken wurde nicht selber angefertigt. Statdessen wurden frei verfügbare
+Die Grafiken wurde nicht selber angefertigt. Stattdessen wurden frei verfügbare
 Grafiken von http://kenney.nl/ verwendet.
 
 ## Architektur
